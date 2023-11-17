@@ -30,6 +30,9 @@ class Rule extends Data{
     this.format = initOption.format
     this.formatUrl = initOption.formatUrl || defaultFormatUrl
   }
+  $getName() {
+    return `${this.$getConstructorName()}:${this.prop}`
+  }
 }
 
 export default Rule

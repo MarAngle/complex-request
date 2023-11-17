@@ -1,4 +1,5 @@
 const config = {
+  showRule: true,
   status: {
     403: '拒绝访问！',
     404: '很抱歉，资源未找到！',
