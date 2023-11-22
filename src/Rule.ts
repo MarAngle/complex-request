@@ -8,22 +8,6 @@ export type tokenType = {
   data?: Record<string, TokenInitOption>
 }
 
-type checkType = (url: string) => boolean
-type formatType = (response: unknown) => unknown
-type formatUrlType = (url: string) => string
-
-export interface RuleInitOption {
-  prop: string
-  token?: tokenType
-  check: checkType
-  format?: formatType
-  formatUrl?: formatUrlType
-}
-
-function defaultFormatUrl(url: string) {
-  return url
-}
-
 export interface responseType<D = unknown> {
   status: 'success' | 'fail' | 'login'
   data: D
@@ -31,12 +15,29 @@ export interface responseType<D = unknown> {
   code?: number | string
 }
 
+type checkType = (url: string) => boolean
+type formatType = (response: unknown, requestConfig: RequestConfig) => responseType
+type formatUrlType = (url: string) => string
+
+export interface RuleInitOption {
+  prop: string
+  token?: tokenType
+  check: checkType
+  format: formatType
+  formatUrl?: formatUrlType
+}
+
+function defaultFormatUrl(url: string) {
+  return url
+}
+
+
 class Rule extends Data{
   static $name = 'Rule'
   prop: string
   token: Record<string, Token>
   check: checkType
-  format?: formatType
+  format: formatType
   formatUrl: formatUrlType
   constructor(initOption: RuleInitOption) {
     super()
@@ -59,12 +60,17 @@ class Rule extends Data{
         const token = this.token[tokenName]
         if (token) {
           if (!token.appendValue(requestConfig, tokenName)) {
-            this.$exportMsg(`${tokenName}对应的Token值不存在！`)
-            return 'token value absent'
+            return {
+              prop: tokenName,
+              token: true,
+              value: false
+            }
           }
         } else {
-          this.$exportMsg(`${tokenName}对应的Token规则不存在！`)
-          return 'token absent'
+          return {
+            prop: tokenName,
+            token: false
+          }
         }
       }
     } else {

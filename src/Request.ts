@@ -1,4 +1,5 @@
 import { Data, getEnv } from "complex-utils"
+import { notice } from "complex-plugin"
 import { noticeMsgType } from "complex-plugin/src/notice"
 import Rule, { RuleInitOption } from "./Rule"
 import config from "../config"
@@ -18,8 +19,8 @@ export interface RequestInitOption {
 
 export type methodType = 'get' | 'post' | 'delete' | 'put' | 'patch' | 'head' | 'options'
 
-export type failNoticeOption = {
-  check?: boolean
+export type failNoticeOptionType = {
+  local?: boolean
   content?: string
   duration?: number
   type?: noticeMsgType
@@ -50,7 +51,7 @@ export interface RequestConfig {
   targetType: 'json' | 'form'
   responseType: 'json' | 'text' | 'blob'
   responseFormat: boolean
-  failNotice?: failNoticeOption
+  failNotice: false | failNoticeOptionType
 }
 
 abstract class Request extends Data{
@@ -87,6 +88,16 @@ abstract class Request extends Data{
       } else {
         this.$exportMsg(`未获取到默认请求处理规则！`, 'error')
       }
+    }
+  }
+  getRule(url: string) {
+    if (this.rule) {
+      for (const prop in this.rule) {
+        if (this.rule[prop].check(url)) {
+          return this.rule[prop]
+        }
+      }
+      return this.rule.default
     }
   }
   protected _getFormatUrl(formatUrl?: formatUrlType) {
@@ -126,24 +137,71 @@ abstract class Request extends Data{
     if (requestConfig.responseFormat === undefined) {
       requestConfig.responseFormat = true
     }
+    if (requestConfig.failNotice === undefined) {
+      requestConfig.failNotice = {}
+    }
     return requestConfig as RequestConfig
   }
   request(requestConfig: Partial<RequestConfig>) {
     return new Promise((resolve, reject) => {
       const finalRequestConfig = this.$parseRequestConfig(requestConfig)
-      this.$request(finalRequestConfig).then(res => {
-        this.$format(res, finalRequestConfig).then(res => {
-          resolve(res)
-        }).catch(err => {
-          reject(err)
-        })
+      const rule = this.getRule(finalRequestConfig.url)
+      this._request(finalRequestConfig, rule).then(response => {
+        if (finalRequestConfig.responseFormat && rule) {
+          const finalResponse = rule.format(response, finalRequestConfig)
+          if (finalResponse.status === 'success') {
+            resolve(finalResponse)
+          } else if (finalResponse.status === 'login') {
+            // 此处考虑登录逻辑处理
+            reject(finalResponse)
+          } else if (finalResponse.status === 'fail') {
+            this._showFailNotice(false, finalRequestConfig.failNotice, '请求失败', finalResponse.msg)
+            reject(finalResponse)
+          }
+        } else {
+          resolve({
+            status: 'success',
+            code: 'origin',
+            data: response
+          })
+        }
       }).catch(err => {
+        this._showFailNotice(true, finalRequestConfig.failNotice, '请求错误', this.$parseError(err, this.status))
         reject(err)
       })
     })
   }
-  abstract $request(requestConfig: RequestConfig): Promise<unknown>
-  abstract $format(response: unknown, requestConfig: RequestConfig): Promise<unknown>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected _showFailNotice(isLocal: boolean, failNotice: false | failNoticeOptionType, title: string, msg?: string) {
+    if (failNotice !== false) {
+      if (failNotice.local === false && isLocal) {
+        return
+      }
+      const content = failNotice.content || msg
+      if (content) {
+        notice.showMsg(content, failNotice.type, failNotice.title || title, failNotice.duration)
+      }
+    }
+  }
+  protected _request(requestConfig: RequestConfig, rule?: Rule) {
+    if (rule) {
+      const res = rule.appendToken(requestConfig)
+      if (res) {
+        if (res.token) {
+          this.$exportMsg(`${res.prop}对应的Token值不存在！`)
+          // 此处考虑刷新Token的机制以及登陆机制
+          // ---！！！
+          return Promise.reject({ status: 'fail', code: 'token value absent' })
+        } else {
+          this.$exportMsg(`${res.prop}对应的Token规则不存在！`)
+          return Promise.reject({ status: 'fail', code: 'token absent' })
+        }
+      }
+    }
+    return this.$request(requestConfig, rule)
+  }
+  abstract $request(requestConfig: RequestConfig, rule?: Rule): Promise<unknown>
+  abstract $parseError(responseError: unknown, status: statusType): string
   get(requestConfig: Partial<RequestConfig>) {
     requestConfig.method = 'get'
     return this.request
