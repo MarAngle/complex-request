@@ -40,13 +40,14 @@ const defaultFormatUrl = function(url: string) {
 export interface RequestConfig {
   url: string
   method: methodType
-  head: Record<PropertyKey, unknown>
-  data: Record<PropertyKey, unknown>
+  headers: Record<PropertyKey, unknown>
+  data: Record<PropertyKey, unknown> | FormData
   params: Record<PropertyKey, unknown>
+  token: boolean | string[]
   // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
   format?: (...args: unknown[]) => void
-  currentType: 'text' | 'json' | 'form'
-  targetType: 'text' | 'json' | 'form'
+  currentType: 'json' | 'form'
+  targetType: 'json' | 'form'
   responseType: 'json' | 'text' | 'blob'
   responseFormat: boolean
   failNotice?: failNoticeOption
@@ -101,26 +102,23 @@ abstract class Request extends Data{
     if (!requestConfig.method) {
       requestConfig.method = 'get'
     }
-    if (!requestConfig.currentType) {
-      requestConfig.currentType = 'json'
-    }
-    if (!requestConfig.targetType) {
-      requestConfig.targetType = 'json'
-    }
-    if (!requestConfig.head) {
-      requestConfig.head = {}
-    }
-    if (!requestConfig.data) {
-      requestConfig.data = {}
-    }
-    if (!requestConfig.params) {
-      requestConfig.params = {}
-    }
     if (requestConfig.currentType === undefined) {
       requestConfig.currentType = 'json'
     }
     if (requestConfig.targetType === undefined) {
       requestConfig.targetType = 'json'
+    }
+    if (!requestConfig.headers) {
+      requestConfig.headers = {}
+    }
+    if (!requestConfig.data) {
+      requestConfig.data = requestConfig.currentType === 'form' ? new FormData() : {}
+    }
+    if (requestConfig.token === undefined) {
+      requestConfig.token = true
+    }
+    if (!requestConfig.params) {
+      requestConfig.params = {}
     }
     if (requestConfig.responseType === undefined) {
       requestConfig.responseType = 'json'
