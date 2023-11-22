@@ -5,23 +5,21 @@ type getValueType = () => unknown
 type removeValueType = getValueType
 type clearType = getValueType
 
-type checkType = (data: unknown) => boolean
+type isExistType = (data: unknown) => boolean
 type destroyType = clearType
 
 export type locationType = 'body' | 'header' | 'params'
 
 export interface TokenInitOption {
   value?: unknown
-  require?: boolean
-  location?: locationType
-  empty?: boolean
-  time?: number
-  session?: boolean
-  getValue?: getValueType
-  isExist?: checkType
-  checkValue?: checkType
-  clear?: clearType
-  destroy?: destroyType
+  require?: boolean // 是否必选，必选则会在isExist返回不存在时失败，可能触发rule.login
+  location?: locationType // 位置
+  time?: number // 本地缓存有效期
+  session?: boolean // 本地缓存是否为session
+  getValue?: getValueType // 获取value函数实现，如存在此函数则不会直接从value中取值
+  isExist?: isExistType // 判断数据是否存在，用户require判断和缓存获取判断
+  clear?: clearType // 清除数据
+  destroy?: destroyType // 销毁数据
 }
 
 function setValue(this: Token, data: unknown, unSave?: boolean) {
@@ -95,7 +93,7 @@ class Token {
   value: unknown
   location: locationType
   time: undefined | number
-  isExist: checkType
+  isExist: isExistType
   setValue: (data: unknown, unSave?: boolean) => void
   $getValue?: getValueType
   getValue: getValueType

@@ -1,4 +1,4 @@
-import { Data, getEnv } from "complex-utils"
+import { Data, getEnv, jsonToForm } from "complex-utils"
 import { notice } from "complex-plugin"
 import { noticeMsgType } from "complex-plugin/src/notice"
 import Rule, { RuleInitOption } from "./Rule"
@@ -39,19 +39,19 @@ const defaultFormatUrl = function(url: string) {
 }
 
 export interface RequestConfig {
-  url: string
-  method: methodType
-  headers: Record<PropertyKey, unknown>
-  data: Record<PropertyKey, unknown> | FormData
-  params: Record<PropertyKey, unknown>
-  token: boolean | string[]
-  // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
-  format?: (...args: unknown[]) => void
-  currentType: 'json' | 'form'
-  targetType: 'json' | 'form'
-  responseType: 'json' | 'text' | 'blob'
-  responseFormat: boolean
+  url: string // 请求地址
+  method: methodType // 请求方式
+  headers: Record<PropertyKey, unknown> // Header头
+  data: Record<PropertyKey, unknown> | FormData // Body体
+  params: Record<PropertyKey, unknown> // query数据
+  token: boolean | string[] // Token
+  format?: (...args: unknown[]) => void // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
+  currentType: 'json' | 'form' // 当前数据类型
+  targetType: 'json' | 'form' // 目标数据类型
+  responseType: 'json' | 'text' | 'blob' // 返回值类型，仅json进行格式化
+  responseFormat: boolean // 返回值格式化判断，为否不格式化
   failNotice: false | failNoticeOptionType
+  local?: Record<PropertyKey, unknown> // 请求插件的单独参数
 }
 
 abstract class Request extends Data{
@@ -123,16 +123,32 @@ abstract class Request extends Data{
     if (!requestConfig.method) {
       requestConfig.method = 'get'
     }
+    if (!requestConfig.headers) {
+      requestConfig.headers = {}
+    }
+    if (requestConfig.headers['Content-Type'] === undefined) {
+      requestConfig.headers['Content-Type'] = config.contentType.data
+    }
     if (requestConfig.currentType === undefined) {
       requestConfig.currentType = 'json'
     }
     if (requestConfig.targetType === undefined) {
       requestConfig.targetType = 'json'
     }
-    if (!requestConfig.headers) {
-      requestConfig.headers = {}
-    }
-    if (!requestConfig.data) {
+    if (requestConfig.currentType !== requestConfig.targetType) {
+      if (!requestConfig.data) {
+        requestConfig.data = requestConfig.targetType === 'form' ? new FormData() : {}
+        requestConfig.currentType = requestConfig.targetType
+      } else if (requestConfig.currentType === 'json') {
+        requestConfig.data = jsonToForm(requestConfig.data)
+      } else {
+        const data: Record<PropertyKey, unknown> = {};
+        (requestConfig.data as FormData).forEach((value, key) => {
+          (data as Record<PropertyKey, unknown>)[key] = value
+        })
+        requestConfig.data = data
+      }
+    } else {
       requestConfig.data = requestConfig.currentType === 'form' ? new FormData() : {}
     }
     if (requestConfig.token === undefined) {
@@ -153,33 +169,8 @@ abstract class Request extends Data{
     return requestConfig as RequestConfig
   }
   request(requestConfig: Partial<RequestConfig>) {
-    return new Promise((resolve, reject) => {
-      const finalRequestConfig = this.$parseRequestConfig(requestConfig)
-      const rule = this.getRule(finalRequestConfig.url)
-      this._request(finalRequestConfig, rule).then(response => {
-        if (finalRequestConfig.responseFormat && rule) {
-          const finalResponse = rule.format(response, finalRequestConfig)
-          if (finalResponse.status === 'success') {
-            resolve(finalResponse)
-          } else if (finalResponse.status === 'login') {
-            // 此处考虑登录逻辑处理
-            reject(finalResponse)
-          } else if (finalResponse.status === 'fail') {
-            this._showFailNotice(false, finalRequestConfig.failNotice, '请求失败', finalResponse.msg)
-            reject(finalResponse)
-          }
-        } else {
-          resolve({
-            status: 'success',
-            code: 'origin',
-            data: response
-          })
-        }
-      }).catch(err => {
-        this._showFailNotice(true, finalRequestConfig.failNotice, '请求错误', this.$parseError(err, this.status))
-        reject(err)
-      })
-    })
+    const finalRequestConfig = this.$parseRequestConfig(requestConfig)
+    return this._request(finalRequestConfig, this.getRule(finalRequestConfig.url))
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected _showFailNotice(isLocal: boolean, failNotice: false | failNoticeOptionType, title: string, msg?: string) {
@@ -193,24 +184,68 @@ abstract class Request extends Data{
       }
     }
   }
-  protected _request(requestConfig: RequestConfig, rule?: Rule) {
+  protected _request(requestConfig: RequestConfig, rule?: Rule, isRefresh?: boolean) {
     if (rule) {
       const res = rule.appendToken(requestConfig)
       if (res) {
         if (res.token) {
-          this.$exportMsg(`${res.prop}对应的Token值不存在！`)
-          // 此处考虑刷新Token的机制以及登陆机制
-          // ---！！！
-          return Promise.reject({ status: 'fail', code: 'token value absent' })
+          // 存在Token规则但是不存在值，需要调用login接口
+          // 此处不应判断是否为重复操作
+          return new Promise((resolve, reject) => {
+            rule.login().then(() => {
+              this._request(requestConfig, rule, isRefresh).then(res => {
+                resolve(res)
+              }).catch(err => {
+                reject(err)
+              })
+            }).catch(err => {
+              reject(err)
+            })
+          })
         } else {
           this.$exportMsg(`${res.prop}对应的Token规则不存在！`)
           return Promise.reject({ status: 'fail', code: 'token absent' })
         }
       }
     }
-    return this.$request(requestConfig, rule)
+    return new Promise((resolve, reject) => {
+      this.$request(requestConfig, rule, isRefresh).then(response => {
+        if (requestConfig.responseFormat && requestConfig.responseType === 'json' && rule) {
+          const finalResponse = rule.format(response, requestConfig)
+          if (finalResponse.status === 'success') {
+            resolve(finalResponse)
+          } else if (finalResponse.status === 'login') {
+            if (rule && rule.refresh && !isRefresh) {
+              // 当前请求提示login说明请求前的token验证通过，此时在第一次需要登陆时进行rule.login的操作，进行可能的刷新Token机制
+              // 此刷新机制失败则直接失败，如成功后依然需要登录则按照失败处理
+              rule.refresh().then(() => {
+                this._request(requestConfig, rule, isRefresh).then(res => {
+                  resolve(res)
+                }).catch(err => {
+                  reject(err)
+                })
+              })
+            } else {
+              reject(finalResponse)
+            }
+          } else if (finalResponse.status === 'fail') {
+            this._showFailNotice(false, requestConfig.failNotice, '请求失败', finalResponse.msg)
+            reject(finalResponse)
+          }
+        } else {
+          resolve({
+            status: 'success',
+            code: 'origin',
+            data: response
+          })
+        }
+      }).catch(err => {
+        this._showFailNotice(true, requestConfig.failNotice, '请求错误', this.$parseError(err, this.status))
+        reject(err)
+      })
+    })
   }
-  abstract $request(requestConfig: RequestConfig, rule?: Rule): Promise<unknown>
+  abstract $request(requestConfig: RequestConfig, rule?: Rule, isRefresh?: boolean): Promise<unknown>
   abstract $parseError(responseError: unknown, status: statusType): string
   get(requestConfig: Partial<RequestConfig>) {
     requestConfig.method = 'get'

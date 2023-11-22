@@ -18,19 +18,22 @@ export interface responseType<D = unknown> {
 type checkType = (url: string) => boolean
 type formatType = (response: unknown, requestConfig: RequestConfig) => responseType
 type formatUrlType = (url: string) => string
+type loginType = () => Promise<unknown>
+type refreshType = () => Promise<unknown>
 
 export interface RuleInitOption {
   prop: string
   token?: tokenType
-  check: checkType
-  format: formatType
-  formatUrl?: formatUrlType
+  check: checkType // 校验是否是对应Rule
+  format: formatType // 格式化返回参数
+  login: loginType // 登录操作，触发于token本地验证失败时
+  refresh: refreshType // 刷新操作，触发于请求提示login时
+  formatUrl?: formatUrlType // 格式化对应URL
 }
 
 function defaultFormatUrl(url: string) {
   return url
 }
-
 
 class Rule extends Data{
   static $name = 'Rule'
@@ -38,6 +41,8 @@ class Rule extends Data{
   token: Record<string, Token>
   check: checkType
   format: formatType
+  login: loginType
+  refresh: refreshType
   formatUrl: formatUrlType
   constructor(initOption: RuleInitOption) {
     super()
@@ -50,6 +55,8 @@ class Rule extends Data{
     }
     this.check = initOption.check
     this.format = initOption.format
+    this.login = initOption.login
+    this.refresh = initOption.refresh
     this.formatUrl = initOption.formatUrl || defaultFormatUrl
   }
   appendToken(requestConfig: RequestConfig) {
