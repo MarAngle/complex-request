@@ -24,16 +24,16 @@ export interface TokenInitOption {
   destroy?: destroyType
 }
 
-function setValue(this: Token, data: unknown, noSave?: boolean) {
+function setValue(this: Token, data: unknown, unSave?: boolean) {
   this.value = data
-  if (!noSave) {
+  if (!unSave) {
     setLocalData(this.prop, data)
   }
 }
 
-function setValueBySession(this: Token, data: unknown, noSave?: boolean) {
+function setValueBySession(this: Token, data: unknown, unSave?: boolean) {
   this.value = data
-  if (!noSave) {
+  if (!unSave) {
     setSessionLocalData(this.prop, data)
   }
 }
@@ -96,7 +96,7 @@ class Token {
   location: locationType
   time: undefined | number
   isExist: checkType
-  setValue: (data: unknown, noSave?: boolean) => void
+  setValue: (data: unknown, unSave?: boolean) => void
   $getValue?: getValueType
   getValue: getValueType
   removeValue: removeValueType

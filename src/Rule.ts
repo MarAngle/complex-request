@@ -77,6 +77,69 @@ class Rule extends Data{
       return
     }
   }
+  setToken(tokenName: string, value: unknown, unSave?: boolean) {
+    if (this.token[tokenName]) {
+      this.token[tokenName].setValue(value, unSave)
+    } else {
+      this.$exportMsg(`未找到${tokenName}对应的Token规则,setToken失败！`, 'error')
+    }
+  }
+  getToken (tokenName: string) {
+    if (this.token[tokenName]) {
+      return this.token[tokenName].getValue()
+    } else {
+      this.$exportMsg(`未找到${tokenName}对应的Token规则,getToken失败！`, 'error')
+    }
+  }
+  clearToken(tokenName: true | string) {
+    if (tokenName) {
+      if (tokenName === true) {
+        for (const n in this.token) {
+          this._clearToken(n)
+        }
+        return true
+      } else {
+        return this._clearToken(tokenName)
+      }
+    } else {
+      this.$exportMsg(`未指定需要清除的token！`)
+      return false
+    }
+  }
+  protected _clearToken (tokenName: string) {
+    if (this.token[tokenName]) {
+      this.token[tokenName].clear()
+      return true
+    } else {
+      this.$exportMsg(`未找到${tokenName}对应的token规则,clearToken失败！`, 'warn')
+      return false
+    }
+  }
+  destroyToken (tokenName: true | string) {
+    if (tokenName) {
+      if (tokenName === true) {
+        for (const n in this.token) {
+          this._destroyToken(n)
+        }
+        return true
+      } else {
+        return this._destroyToken(tokenName)
+      }
+    } else {
+      this.$exportMsg(`未指定需要销毁的token！`)
+      return false
+    }
+  }
+  protected _destroyToken (tokenName: string) {
+    if (this.token[tokenName]) {
+      this.token[tokenName].destroy()
+      delete this.token[tokenName]
+      return true
+    } else {
+      this.$exportMsg(`未找到${tokenName}对应的token规则,destroyToken失败！`, 'warn')
+      return false
+    }
+  }
   $getName() {
     return `${this.$getConstructorName()}:${this.prop}`
   }

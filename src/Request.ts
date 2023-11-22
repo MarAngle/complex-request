@@ -222,6 +222,65 @@ abstract class Request extends Data{
     requestConfig.targetType = 'form'
     return this.request
   }
+  setToken(tokenName: string, value: unknown, ruleName = 'default', unSave?: boolean) {
+    if (this.rule) {
+      if (this.rule[ruleName]) {
+        this.rule[ruleName].setToken(tokenName, value, unSave)
+      } else {
+        this.$exportMsg(`未找到${ruleName}对应的Rule处理规则，setToken:${tokenName}操作失败！`)
+      }
+    } else {
+      this.$exportMsg(`未加载Rule处理规则，setToken:${tokenName}操作失败！`)
+    }
+  }
+  getToken (tokenName: string, prop = 'default') {
+    if (this.rule) {
+      if (this.rule[prop]) {
+        return this.rule[prop].getToken(tokenName)
+      } else {
+        this.$exportMsg(`未找到${prop}对应的Rule处理规则，getToken:${tokenName}操作失败！`)
+        return false
+      }
+    } else {
+      this.$exportMsg(`未加载Rule处理规则，getToken:${tokenName}操作失败！`)
+    }
+  }
+  clearToken (tokenName: string | true, prop = 'default') {
+    if (this.rule) {
+      if (this.rule[prop]) {
+        return this.rule[prop].clearToken(tokenName)
+      } else {
+        this.$exportMsg(`未找到${prop}对应的处理规则，clearToken:${tokenName}操作失败！`)
+        return false
+      }
+    } else {
+      this.$exportMsg(`未加载Rule处理规则，clearToken:${tokenName}操作失败！`)
+    }
+  }
+  destroyToken (tokenName: string | true, prop = 'default') {
+    if (this.rule) {
+      if (this.rule[prop]) {
+        return this.rule[prop].destroyToken(tokenName)
+      } else {
+        this.$exportMsg(`未找到${prop}对应的处理规则，destroyToken:${tokenName}操作失败！`)
+        return false
+      }
+    } else {
+      this.$exportMsg(`未加载Rule处理规则，destroyToken:${tokenName}操作失败！`)
+    }
+  }
+  clearAllToken() {
+    for (const prop in this.rule) {
+      const ruleItem = this.rule[prop]
+      ruleItem.clearToken(true)
+    }
+  }
+  destroyAllToken() {
+    for (const prop in this.rule) {
+      const ruleItem = this.rule[prop]
+      ruleItem.destroyToken(true)
+    }
+  }
 }
 
 export default Request
