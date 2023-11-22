@@ -90,6 +90,25 @@ abstract class Request extends Data{
       }
     }
   }
+  protected _getFormatUrl(formatUrl?: formatUrlType) {
+    if (formatUrl) {
+      return formatUrl
+    } else if (this.baseUrl) {
+      return defaultFormatUrlWithBaseUrl
+    } else {
+      return defaultFormatUrl
+    }
+  }
+  syncFormatUrl() {
+    // 当前格式化URL函数为默认函数时则进行重新获取操作
+    if (this.formatUrl === defaultFormatUrlWithBaseUrl || this.formatUrl === defaultFormatUrl) {
+      this.formatUrl = this._getFormatUrl()
+    }
+  }
+  changeBaseUrl(baseUrl: string) {
+    this.baseUrl = baseUrl || ''
+    this.syncFormatUrl()
+  }
   getRule(url: string) {
     if (this.rule) {
       for (const prop in this.rule) {
@@ -98,15 +117,6 @@ abstract class Request extends Data{
         }
       }
       return this.rule.default
-    }
-  }
-  protected _getFormatUrl(formatUrl?: formatUrlType) {
-    if (formatUrl) {
-      return formatUrl
-    } else if (this.baseUrl) {
-      return defaultFormatUrlWithBaseUrl
-    } else {
-      return defaultFormatUrl
     }
   }
   $parseRequestConfig(requestConfig: Partial<RequestConfig>): RequestConfig {
