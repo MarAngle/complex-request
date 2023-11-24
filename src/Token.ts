@@ -4,7 +4,6 @@ import { RequestConfig } from './Request'
 type getValueType = () => unknown
 type removeValueType = getValueType
 type clearType = getValueType
-
 type isExistType = (data: unknown) => boolean
 type destroyType = clearType
 
@@ -56,7 +55,7 @@ function getValueBySession(this: Token) {
   }
   return data
 }
-function getValueByData(this: Token) {
+function getValueFromValue(this: Token) {
   let data = this.value
   if (!this.isExist(data)) {
     data = getLocalData(this.prop, this.time)
@@ -66,7 +65,7 @@ function getValueByData(this: Token) {
   }
   return data
 }
-function getValueByDataBySession(this: Token) {
+function getValueFromValueBySession(this: Token) {
   let data = this.value
   if (!this.isExist(data)) {
     data = getSessionLocalData(this.prop, this.time)
@@ -115,7 +114,7 @@ class Token {
       this.$getValue = initOption.getValue
       this.getValue = !session ? getValue : getValueBySession
     } else {
-      this.getValue = !session ? getValueByData : getValueByDataBySession
+      this.getValue = !session ? getValueFromValue : getValueFromValueBySession
     }
     this.removeValue = !session ? removeValue : removeValueBySession
     this.$clear = initOption.clear
