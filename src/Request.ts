@@ -1,7 +1,7 @@
 import { Data, getEnv, jsonToForm } from "complex-utils"
 import { notice } from "complex-plugin"
 import { noticeMsgType } from "complex-plugin/src/notice"
-import Rule, { RuleInitOption } from "./Rule"
+import Rule, { RuleInitOption, responseType } from "./Rule"
 import config from "../config"
 
 type statusType = {
@@ -86,7 +86,7 @@ abstract class Request extends Data{
           this.$exportMsg(`默认的请求处理规则为[${this.rule.default!.$getName()}]`, 'log')
         }
       } else {
-        this.$exportMsg(`未获取到默认请求处理规则！`, 'error')
+        this.$exportMsg(`未创建默认请求处理规则！`, 'error')
       }
     }
   }
@@ -99,7 +99,7 @@ abstract class Request extends Data{
       return defaultFormatUrl
     }
   }
-  syncFormatUrl() {
+  protected _syncFormatUrl() {
     // 当前格式化URL函数为默认函数时则进行重新获取操作
     if (this.formatUrl === defaultFormatUrlWithBaseUrl || this.formatUrl === defaultFormatUrl) {
       this.formatUrl = this._getFormatUrl()
@@ -107,7 +107,7 @@ abstract class Request extends Data{
   }
   changeBaseUrl(baseUrl: string) {
     this.baseUrl = baseUrl || ''
-    this.syncFormatUrl()
+    this._syncFormatUrl()
   }
   getRule(url: string) {
     if (this.rule) {
@@ -119,7 +119,7 @@ abstract class Request extends Data{
       return this.rule.default
     }
   }
-  $parseRequestConfig(requestConfig: Partial<RequestConfig>): RequestConfig {
+  protected _parseRequestConfig(requestConfig: Partial<RequestConfig>): RequestConfig {
     if (!requestConfig.method) {
       requestConfig.method = 'get'
     }
@@ -168,10 +168,9 @@ abstract class Request extends Data{
     return requestConfig as RequestConfig
   }
   request(requestConfig: Partial<RequestConfig>) {
-    const finalRequestConfig = this.$parseRequestConfig(requestConfig)
+    const finalRequestConfig = this._parseRequestConfig(requestConfig)
     return this._request(finalRequestConfig, this.getRule(finalRequestConfig.url))
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected _showFailNotice(isLocal: boolean, failNotice: false | failNoticeOptionType, title: string, msg?: string) {
     if (failNotice !== false) {
       if (failNotice.local === false && isLocal) {
@@ -183,7 +182,7 @@ abstract class Request extends Data{
       }
     }
   }
-  protected _request(requestConfig: RequestConfig, rule?: Rule, isRefresh?: boolean) {
+  protected _request(requestConfig: RequestConfig, rule?: Rule, isRefresh?: boolean): Promise<responseType> {
     if (rule) {
       const res = rule.appendToken(requestConfig)
       if (res) {
@@ -240,10 +239,11 @@ abstract class Request extends Data{
         }
       }).catch(err => {
         this._showFailNotice(true, requestConfig.failNotice, '请求错误', this.$parseError(err, this.status))
-        reject(err)
+        reject({ status: 'fail', code: 'local', err: err })
       })
     })
   }
+  // 重要: requestConfig需要深拷贝到具体实例中而非直接引用，此处保证在login/refresh时的requestConfig保持一致
   abstract $request(requestConfig: RequestConfig, rule?: Rule, isRefresh?: boolean): Promise<unknown>
   abstract $parseError(responseError: unknown, status: statusType): string
   get(requestConfig: Partial<RequestConfig>) {

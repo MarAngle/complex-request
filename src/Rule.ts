@@ -11,8 +11,9 @@ export type tokenType = {
 export interface responseType<D = unknown> {
   status: 'success' | 'fail' | 'login'
   data: D
-  msg?: string
   code?: number | string
+  msg?: string
+  err?: string | Error | Record<PropertyKey, unknown>
 }
 
 type checkType = (url: string) => boolean
