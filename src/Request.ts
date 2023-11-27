@@ -41,11 +41,11 @@ const defaultFormatUrl = function(url: string) {
 export interface RequestConfig {
   url: string // 请求地址
   method: methodType // 请求方式
-  headers: Record<PropertyKey, unknown> // Header头
+  headers: Record<string, undefined | null | string | number | boolean> // Header头
   data: Record<PropertyKey, unknown> | FormData // Body体
   params: Record<PropertyKey, unknown> // query数据
   token: boolean | string[] // Token
-  format?: (...args: unknown[]) => void // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
+  format?: (finalConfig: unknown, rule?: Rule, isRefresh?: boolean) => void // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
   currentType: 'json' | 'form' // 当前数据类型
   targetType?: 'json' | 'form' // 目标数据类型=>初始化参数，后期无效
   responseType: 'json' | 'text' | 'blob' // 返回值类型，仅json进行格式化
@@ -237,15 +237,16 @@ abstract class Request extends Data{
             data: response
           })
         }
-      }).catch(err => {
-        this._showFailNotice(true, requestConfig.failNotice, '请求错误', this.$parseError(err, this.status))
-        reject({ status: 'fail', code: 'local', err: err })
+      }).catch(error => {
+        const err = this.$parseError(error)
+        this._showFailNotice(true, requestConfig.failNotice, err.type === 'request' ? '请求终止' : '请求错误', err.msg)
+        reject({ status: 'fail', code: 'local', err: error })
       })
     })
   }
   // 重要: requestConfig需要深拷贝到具体实例中而非直接引用，此处保证在login/refresh时的requestConfig保持一致
   abstract $request(requestConfig: RequestConfig, rule?: Rule, isRefresh?: boolean): Promise<unknown>
-  abstract $parseError(responseError: unknown, status: statusType): string
+  abstract $parseError(responseError: unknown): { msg?: string, type: 'request' | 'server', data: unknown }
   get(requestConfig: Partial<RequestConfig>) {
     requestConfig.method = 'get'
     return this.request
