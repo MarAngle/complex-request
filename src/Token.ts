@@ -127,7 +127,7 @@ class Token {
       if (location === 'body') {
         appendProp(requestConfig.data, tokenName, value, requestConfig.currentType)
       } else if (location === 'header') {
-        requestConfig.headers[tokenName] = value
+        requestConfig.headers[tokenName] = value as string
       } else if (location === 'params') {
         requestConfig.params[tokenName] = value
       }
