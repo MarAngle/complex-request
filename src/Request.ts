@@ -201,7 +201,9 @@ abstract class Request extends Data{
             })
           })
         } else {
-          this.$exportMsg(`${res.prop}对应的Token规则不存在！`)
+          const msg = `${res.prop}对应的Token规则不存在！`
+          this.$exportMsg(msg)
+          this._showFailNotice(true, requestConfig.failNotice, '请求终止', msg)
           return Promise.reject({ status: 'fail', code: 'token absent' })
         }
       }
@@ -239,7 +241,7 @@ abstract class Request extends Data{
         }
       }).catch(error => {
         const err = this.$parseError(error)
-        this._showFailNotice(true, requestConfig.failNotice, err.type === 'request' ? '请求终止' : '请求错误', err.msg)
+        this._showFailNotice(true, requestConfig.failNotice, err.type === 'request' ? '请求终止' : '请求错误', err.msg || config.fail[err.type])
         reject({ status: 'fail', code: 'local', err: error })
       })
     })
