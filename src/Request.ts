@@ -242,7 +242,7 @@ abstract class Request extends Data{
       }).catch(error => {
         const err = this.$parseError(error)
         this._showFailNotice(true, requestConfig.failNotice, err.type === 'request' ? '请求终止' : '请求错误', err.msg || config.fail[err.type])
-        reject({ status: 'fail', code: 'local', err: error })
+        reject({ status: 'fail', code: err.type + ' error', err: error })
       })
     })
   }
