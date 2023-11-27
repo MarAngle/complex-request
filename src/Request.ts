@@ -47,7 +47,7 @@ export interface RequestConfig {
   token: boolean | string[] // Token
   format?: (...args: unknown[]) => void // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
   currentType: 'json' | 'form' // 当前数据类型
-  targetType: 'json' | 'form' // 目标数据类型
+  targetType?: 'json' | 'form' // 目标数据类型=>初始化参数，后期无效
   responseType: 'json' | 'text' | 'blob' // 返回值类型，仅json进行格式化
   responseFormat: boolean // 返回值格式化判断，为否不格式化
   failNotice: false | failNoticeOptionType
@@ -124,21 +124,19 @@ abstract class Request extends Data{
       requestConfig.method = 'get'
     }
     if (!requestConfig.headers) {
-      requestConfig.headers = {}
-    }
-    if (requestConfig.headers['Content-Type'] === undefined) {
+      requestConfig.headers = {
+        'Content-Type': config.contentType.data
+      }
+    } else if (requestConfig.headers['Content-Type'] === undefined) {
       requestConfig.headers['Content-Type'] = config.contentType.data
     }
     if (requestConfig.currentType === undefined) {
       requestConfig.currentType = 'json'
     }
-    if (requestConfig.targetType === undefined) {
-      requestConfig.targetType = 'json'
-    }
-    if (requestConfig.currentType !== requestConfig.targetType) {
+    const targetType = requestConfig.targetType || 'json'
+    if (requestConfig.currentType !== targetType) {
       if (!requestConfig.data) {
-        requestConfig.data = requestConfig.targetType === 'form' ? new FormData() : {}
-        requestConfig.currentType = requestConfig.targetType
+        requestConfig.data = targetType === 'form' ? new FormData() : {}
       } else if (requestConfig.currentType === 'json') {
         requestConfig.data = jsonToForm(requestConfig.data)
       } else {
@@ -148,6 +146,7 @@ abstract class Request extends Data{
         })
         requestConfig.data = data
       }
+      requestConfig.currentType = targetType
     } else {
       requestConfig.data = requestConfig.currentType === 'form' ? new FormData() : {}
     }
