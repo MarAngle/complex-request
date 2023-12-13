@@ -1,5 +1,5 @@
 import { isExist, setLocalData, getLocalData, removeLocalData, setSessionLocalData, getSessionLocalData, removeSessionLocalData, appendProp } from 'complex-utils'
-import { RequestConfig } from './Request'
+import { RequestConfig } from './BaseRequest'
 
 type getValueType = () => unknown
 type removeValueType = getValueType

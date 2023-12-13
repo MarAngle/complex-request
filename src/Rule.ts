@@ -1,6 +1,6 @@
 import { Data } from "complex-utils"
 import Token, { TokenInitOption } from "./Token"
-import { RequestConfig } from "./Request"
+import { RequestConfig } from "./BaseRequest"
 
 export type tokenType = {
   time?: number

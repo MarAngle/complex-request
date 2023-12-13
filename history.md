@@ -1,5 +1,10 @@
 ### ToDo
 
+### 0.1.8
+- 非兼容性更新: Request => BaseRequest
+- 修正post/get/form/json未正确请求的BUG
+- 升级依赖
+
 ### 0.1.7
 - 修正错误的依赖
 

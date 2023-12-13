@@ -27,7 +27,7 @@ export type failNoticeOptionType = {
   title?: string
 }
 
-const defaultFormatUrlWithBaseUrl = function(this: Request, url: string) {
+const defaultFormatUrlWithBaseUrl = function(this: BaseRequest, url: string) {
   if (url.indexOf('https://') !== 0 && url.indexOf('http://') !== 0) {
     // 当前URL不以http/https开始，则认为此URL需要添加默认前缀
     url = this.baseUrl + url
@@ -54,8 +54,8 @@ export interface RequestConfig {
   local?: Record<PropertyKey, unknown> // 请求插件的单独参数
 }
 
-abstract class Request extends Data{
-  static $name = 'Request'
+abstract class BaseRequest extends Data{
+  static $name = 'BaseRequest'
   baseUrl?: string
   status: statusType
   formatUrl: formatUrlType
@@ -251,23 +251,23 @@ abstract class Request extends Data{
   abstract $parseError(responseError: unknown): { msg?: string, type: 'request' | 'server', data: unknown }
   get(requestConfig: Partial<RequestConfig>) {
     requestConfig.method = 'get'
-    return this.request
+    return this.request(requestConfig)
   }
   post(requestConfig: Partial<RequestConfig>) {
     requestConfig.method = 'post'
-    return this.request
+    return this.request(requestConfig)
   }
   form(requestConfig: Partial<RequestConfig>) {
     requestConfig.method = 'post'
     requestConfig.currentType = 'form'
     requestConfig.targetType = 'form'
-    return this.request
+    return this.request(requestConfig)
   }
   json(requestConfig: Partial<RequestConfig>) {
     requestConfig.method = 'post'
     requestConfig.currentType = 'json'
     requestConfig.targetType = 'form'
-    return this.request
+    return this.request(requestConfig)
   }
   setToken(tokenName: string, value: unknown, ruleName = 'default', unSave?: boolean) {
     if (this.rule) {
@@ -330,4 +330,4 @@ abstract class Request extends Data{
   }
 }
 
-export default Request
+export default BaseRequest
