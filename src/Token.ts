@@ -120,7 +120,7 @@ class Token {
     this.$clear = initOption.clear
     this.$destroy = initOption.destroy
   }
-  appendValue(requestConfig: RequestConfig, tokenName: string) {
+  appendValue(requestConfig: RequestConfig<unknown>, tokenName: string) {
     const value = this.getValue()
     if (this.checkValue(value)) {
       const location = this.location

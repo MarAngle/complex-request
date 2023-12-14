@@ -1,5 +1,9 @@
 ### ToDo
 
+### 0.1.9
+- BUG: 修正requestConfig.data被重置为空数据的BUG
+- 类型: 扩展BaseRequest为泛型类，将返回值基础类型作为泛型传递，可以在后续扩展类中定义最终的返回值基础类型
+
 ### 0.1.8
 - 非兼容性更新: Request => BaseRequest
 - 修正post/get/form/json未正确请求的BUG

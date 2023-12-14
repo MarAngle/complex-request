@@ -10,11 +10,11 @@ type statusType = {
 
 export type formatUrlType = (url: string) => string
 
-export interface RequestInitOption {
+export interface RequestInitOption<R = Record<PropertyKey, unknown>> {
   baseUrl?: string
   status?: statusType
   formatUrl?: formatUrlType
-  rule?: RuleInitOption[]
+  rule?: RuleInitOption<R>[]
 }
 
 export type methodType = 'get' | 'post' | 'delete' | 'put' | 'patch' | 'head' | 'options'
@@ -38,14 +38,14 @@ const defaultFormatUrl = function(url: string) {
   return url
 }
 
-export interface RequestConfig {
+export interface RequestConfig<R = Record<PropertyKey, unknown>> {
   url: string // 请求地址
   method: methodType // 请求方式
   headers: Record<string, undefined | null | string | number | boolean> // Header头
   data: Record<PropertyKey, unknown> | FormData // Body体
   params: Record<PropertyKey, unknown> // query数据
   token: boolean | string[] // Token
-  format?: (finalConfig: unknown, rule?: Rule, isRefresh?: boolean) => unknown // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
+  format?: (finalConfig: unknown, rule?: Rule<R>, isRefresh?: boolean) => unknown // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
   currentType: 'json' | 'form' // 当前数据类型
   targetType?: 'json' | 'form' // 目标数据类型=>初始化参数，后期无效
   responseType: 'json' | 'text' | 'blob' // 返回值类型，仅json进行格式化
@@ -54,13 +54,13 @@ export interface RequestConfig {
   local?: Record<PropertyKey, unknown> // 请求插件的单独参数
 }
 
-abstract class BaseRequest extends Data{
+abstract class BaseRequest<R = Record<PropertyKey, unknown>> extends Data{
   static $name = 'BaseRequest'
   baseUrl?: string
   status: statusType
   formatUrl: formatUrlType
-  rule?: Record<string, Rule>
-  constructor(initOption: RequestInitOption) {
+  rule?: Record<string, Rule<R>>
+  constructor(initOption: RequestInitOption<R>) {
     super()
     this.baseUrl = initOption.baseUrl
     this.status = {
@@ -119,7 +119,8 @@ abstract class BaseRequest extends Data{
       return this.rule.default
     }
   }
-  protected _parseRequestConfig(requestConfig: Partial<RequestConfig>): RequestConfig {
+  protected _parseRequestConfig(requestConfig: Partial<RequestConfig<R>>): RequestConfig<R> {
+    requestConfig.url = this.formatUrl(requestConfig.url!)
     if (!requestConfig.method) {
       requestConfig.method = 'get'
     }
@@ -134,10 +135,10 @@ abstract class BaseRequest extends Data{
       requestConfig.currentType = 'json'
     }
     const targetType = requestConfig.targetType || 'json'
-    if (requestConfig.currentType !== targetType) {
-      if (!requestConfig.data) {
-        requestConfig.data = targetType === 'form' ? new FormData() : {}
-      } else if (requestConfig.currentType === 'json') {
+    if (!requestConfig.data) {
+      requestConfig.data = targetType === 'form' ? new FormData() : {}
+    } else if (requestConfig.currentType !== targetType) {
+      if (requestConfig.currentType === 'json') {
         requestConfig.data = jsonToForm(requestConfig.data)
       } else {
         const data: Record<PropertyKey, unknown> = {};
@@ -146,10 +147,8 @@ abstract class BaseRequest extends Data{
         })
         requestConfig.data = data
       }
-      requestConfig.currentType = targetType
-    } else {
-      requestConfig.data = requestConfig.currentType === 'form' ? new FormData() : {}
     }
+    requestConfig.currentType = targetType
     if (requestConfig.token === undefined) {
       requestConfig.token = true
     }
@@ -165,9 +164,9 @@ abstract class BaseRequest extends Data{
     if (requestConfig.failNotice === undefined) {
       requestConfig.failNotice = {}
     }
-    return requestConfig as RequestConfig
+    return requestConfig as RequestConfig<R>
   }
-  request(requestConfig: Partial<RequestConfig>) {
+  request(requestConfig: Partial<RequestConfig<R>>) {
     const finalRequestConfig = this._parseRequestConfig(requestConfig)
     return this._request(finalRequestConfig, this.getRule(finalRequestConfig.url))
   }
@@ -182,7 +181,7 @@ abstract class BaseRequest extends Data{
       }
     }
   }
-  protected _request(requestConfig: RequestConfig, rule?: Rule, isRefresh?: boolean): Promise<responseType> {
+  protected _request(requestConfig: RequestConfig<R>, rule?: Rule<R>, isRefresh?: boolean): Promise<responseType> {
     if (rule) {
       const res = rule.appendToken(requestConfig)
       if (res) {
@@ -247,23 +246,23 @@ abstract class BaseRequest extends Data{
     })
   }
   // 重要: requestConfig需要深拷贝到具体实例中而非直接引用，此处保证在login/refresh时的requestConfig保持一致
-  abstract $request(requestConfig: RequestConfig, rule?: Rule, isRefresh?: boolean): Promise<unknown>
+  abstract $request(requestConfig: RequestConfig<R>, rule?: Rule<R>, isRefresh?: boolean): Promise<R>
   abstract $parseError(responseError: unknown): { msg?: string, type: 'request' | 'server', data: unknown }
-  get(requestConfig: Partial<RequestConfig>) {
+  get(requestConfig: Partial<RequestConfig<R>>) {
     requestConfig.method = 'get'
     return this.request(requestConfig)
   }
-  post(requestConfig: Partial<RequestConfig>) {
+  post(requestConfig: Partial<RequestConfig<R>>) {
     requestConfig.method = 'post'
     return this.request(requestConfig)
   }
-  form(requestConfig: Partial<RequestConfig>) {
+  form(requestConfig: Partial<RequestConfig<R>>) {
     requestConfig.method = 'post'
     requestConfig.currentType = 'form'
     requestConfig.targetType = 'form'
     return this.request(requestConfig)
   }
-  json(requestConfig: Partial<RequestConfig>) {
+  json(requestConfig: Partial<RequestConfig<R>>) {
     requestConfig.method = 'post'
     requestConfig.currentType = 'json'
     requestConfig.targetType = 'form'

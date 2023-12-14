@@ -8,7 +8,8 @@ export type tokenType = {
   data?: Record<string, TokenInitOption>
 }
 
-export interface responseType<D = unknown> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface responseType<D = any> {
   status: 'success' | 'fail' | 'login'
   data: D
   code?: number | string
@@ -17,16 +18,16 @@ export interface responseType<D = unknown> {
 }
 
 type checkType = (url: string) => boolean
-type formatType = (response: unknown, requestConfig: RequestConfig) => responseType
+type formatType<R = Record<PropertyKey, unknown>> = (response: R, requestConfig: RequestConfig<R>) => responseType
 type formatUrlType = (url: string) => string
 type loginType = () => Promise<unknown>
 type refreshType = () => Promise<unknown>
 
-export interface RuleInitOption {
+export interface RuleInitOption<R = Record<PropertyKey, unknown>> {
   prop: string
   token?: tokenType
   check: checkType // 校验是否是对应Rule
-  format: formatType // 格式化返回参数
+  format: formatType<R> // 格式化返回参数
   login: loginType // 登录操作，触发于token本地验证失败时
   refresh: refreshType // 刷新操作，触发于请求提示login时
   formatUrl?: formatUrlType // 格式化对应URL
@@ -36,16 +37,16 @@ function defaultFormatUrl(url: string) {
   return url
 }
 
-class Rule extends Data{
+class Rule<R = Record<PropertyKey, unknown>> extends Data{
   static $name = 'Rule'
   prop: string
   token: Record<string, Token>
   check: checkType
-  format: formatType
+  format: formatType<R>
   login: loginType
   refresh: refreshType
   formatUrl: formatUrlType
-  constructor(initOption: RuleInitOption) {
+  constructor(initOption: RuleInitOption<R>) {
     super()
     this.prop = initOption.prop
     this.token = {}
@@ -60,7 +61,7 @@ class Rule extends Data{
     this.refresh = initOption.refresh
     this.formatUrl = initOption.formatUrl || defaultFormatUrl
   }
-  appendToken(requestConfig: RequestConfig) {
+  appendToken(requestConfig: RequestConfig<R>) {
     const tokenList = requestConfig.token === true ? Object.keys(this.token) : requestConfig.token
     if (tokenList) {
       for (let i = 0; i < tokenList.length; i++) {
