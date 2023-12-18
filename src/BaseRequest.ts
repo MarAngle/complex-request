@@ -1,4 +1,4 @@
-import { Data, getEnv, jsonToForm } from "complex-utils"
+import { UtilsData, getEnv, jsonToForm } from "complex-utils"
 import { notice } from "complex-plugin"
 import { noticeMsgType } from "complex-plugin/src/notice"
 import Rule, { RuleInitOption, responseType } from "./Rule"
@@ -54,8 +54,9 @@ export interface RequestConfig<R = Record<PropertyKey, unknown>> {
   local?: Record<PropertyKey, unknown> // 请求插件的单独参数
 }
 
-abstract class BaseRequest<R = Record<PropertyKey, unknown>> extends Data{
+abstract class BaseRequest<R = Record<PropertyKey, unknown>> extends UtilsData{
   static $name = 'BaseRequest'
+  static $formatConfig = { name: 'Request:BaseRequest', level: 5, recommend: false }
   baseUrl?: string
   status: statusType
   formatUrl: formatUrlType

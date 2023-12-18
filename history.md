@@ -1,5 +1,8 @@
 ### ToDo
 
+### 0.1.10
+- 升级依赖，适配formatConfig
+
 ### 0.1.9
 - BUG: 修正requestConfig.data被重置为空数据的BUG
 - 类型: 扩展BaseRequest为泛型类，将返回值基础类型作为泛型传递，可以在后续扩展类中定义最终的返回值基础类型

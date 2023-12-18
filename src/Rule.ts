@@ -1,4 +1,4 @@
-import { Data } from "complex-utils"
+import { UtilsData } from "complex-utils"
 import Token, { TokenInitOption } from "./Token"
 import { RequestConfig } from "./BaseRequest"
 
@@ -37,8 +37,9 @@ function defaultFormatUrl(url: string) {
   return url
 }
 
-class Rule<R = Record<PropertyKey, unknown>> extends Data{
+class Rule<R = Record<PropertyKey, unknown>> extends UtilsData{
   static $name = 'Rule'
+  static $formatConfig = { name: 'Request:Rule', level: 5, recommend: false }
   prop: string
   token: Record<string, Token>
   check: checkType
