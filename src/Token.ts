@@ -120,9 +120,9 @@ class Token {
     this.$clear = initOption.clear
     this.$destroy = initOption.destroy
   }
-  appendValue(requestConfig: RequestConfig<unknown>, tokenName: string) {
+  $appendValue(requestConfig: RequestConfig<unknown>, tokenName: string) {
     const value = this.getValue()
-    if (this.checkValue(value)) {
+    if (this.$checkValue(value)) {
       const location = this.location
       if (location === 'body') {
         appendProp(requestConfig.data, tokenName, value, requestConfig.currentType)
@@ -136,7 +136,7 @@ class Token {
       return false
     }
   }
-  checkValue(data: unknown) {
+  $checkValue(data: unknown) {
     if (this.require && !this.isExist(data)) {
       // 数据必选且不存在时返回失败
       return false

@@ -110,7 +110,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>> extends UtilsData{
     this.baseUrl = baseUrl || ''
     this._syncFormatUrl()
   }
-  getRule(url: string) {
+  $getRule(url: string) {
     if (this.rule) {
       for (const prop in this.rule) {
         if (this.rule[prop].check(url)) {
@@ -169,7 +169,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>> extends UtilsData{
   }
   request(requestConfig: Partial<RequestConfig<R>>) {
     const finalRequestConfig = this._parseRequestConfig(requestConfig)
-    return this._request(finalRequestConfig, this.getRule(finalRequestConfig.url))
+    return this._request(finalRequestConfig, this.$getRule(finalRequestConfig.url))
   }
   protected _showFailNotice(isLocal: boolean, failNotice: false | failNoticeOptionType, title: string, msg?: string) {
     if (failNotice !== false) {
@@ -184,7 +184,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>> extends UtilsData{
   }
   protected _request(requestConfig: RequestConfig<R>, rule?: Rule<R>, isRefresh?: boolean): Promise<responseType> {
     if (rule) {
-      const res = rule.appendToken(requestConfig)
+      const res = rule.$appendToken(requestConfig)
       if (res) {
         if (res.token) {
           // 存在Token规则但是不存在值，需要调用login接口

@@ -62,14 +62,14 @@ class Rule<R = Record<PropertyKey, unknown>> extends UtilsData{
     this.refresh = initOption.refresh
     this.formatUrl = initOption.formatUrl || defaultFormatUrl
   }
-  appendToken(requestConfig: RequestConfig<R>) {
+  $appendToken(requestConfig: RequestConfig<R>) {
     const tokenList = requestConfig.token === true ? Object.keys(this.token) : requestConfig.token
     if (tokenList) {
       for (let i = 0; i < tokenList.length; i++) {
         const tokenName = tokenList[i]
         const token = this.token[tokenName]
         if (token) {
-          if (!token.appendValue(requestConfig, tokenName)) {
+          if (!token.$appendValue(requestConfig, tokenName)) {
             return {
               prop: tokenName,
               token: true,
