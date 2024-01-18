@@ -38,29 +38,29 @@ const defaultFormatUrl = function(url: string) {
   return url
 }
 
-export interface RequestConfig<R = Record<PropertyKey, unknown>> {
+export interface RequestConfig<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> {
   url: string // 请求地址
   method: methodType // 请求方式
   headers: Record<string, undefined | null | string | number | boolean> // Header头
   data: Record<PropertyKey, unknown> | FormData // Body体
   params: Record<PropertyKey, unknown> // query数据
   token: boolean | string[] // Token
-  format?: (finalConfig: unknown, rule?: Rule<R>, isRefresh?: boolean) => unknown // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
+  format?: (finalConfig: unknown, rule?: Rule<R, L>, isRefresh?: boolean) => unknown // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
   currentType: 'json' | 'form' // 当前数据类型
   targetType?: 'json' | 'form' // 目标数据类型=>初始化参数，后期无效
   responseType: 'json' | 'text' | 'blob' // 返回值类型，仅json进行格式化
   responseFormat: boolean // 返回值格式化判断，为否不格式化
   failNotice: false | failNoticeOptionType
-  local?: Record<PropertyKey, unknown> // 请求插件的单独参数
+  local?: L // 请求插件的单独参数
 }
 
-abstract class BaseRequest<R = Record<PropertyKey, unknown>> extends UtilsData{
+abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> extends UtilsData{
   static $name = 'BaseRequest'
   static $formatConfig = { name: 'Request:BaseRequest', level: 5, recommend: false }
   baseUrl?: string
   status: statusType
   formatUrl: formatUrlType
-  rule?: Record<string, Rule<R>>
+  rule?: Record<string, Rule<R, L>>
   constructor(initOption: RequestInitOption<R>) {
     super()
     this.baseUrl = initOption.baseUrl
@@ -120,7 +120,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>> extends UtilsData{
       return this.rule.default
     }
   }
-  protected _parseRequestConfig(requestConfig: Partial<RequestConfig<R>>): RequestConfig<R> {
+  protected _parseRequestConfig(requestConfig: Partial<RequestConfig<R, L>>): RequestConfig<R, L> {
     requestConfig.url = this.formatUrl(requestConfig.url!)
     if (!requestConfig.method) {
       requestConfig.method = 'get'
@@ -165,9 +165,9 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>> extends UtilsData{
     if (requestConfig.failNotice === undefined) {
       requestConfig.failNotice = {}
     }
-    return requestConfig as RequestConfig<R>
+    return requestConfig as RequestConfig<R, L>
   }
-  request(requestConfig: Partial<RequestConfig<R>>) {
+  request(requestConfig: Partial<RequestConfig<R, L>>) {
     const finalRequestConfig = this._parseRequestConfig(requestConfig)
     return this._request(finalRequestConfig, this.$getRule(finalRequestConfig.url))
   }
@@ -182,7 +182,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>> extends UtilsData{
       }
     }
   }
-  protected _request(requestConfig: RequestConfig<R>, rule?: Rule<R>, isRefresh?: boolean): Promise<responseType> {
+  protected _request(requestConfig: RequestConfig<R, L>, rule?: Rule<R, L>, isRefresh?: boolean): Promise<responseType> {
     if (rule) {
       const res = rule.$appendToken(requestConfig)
       if (res) {
@@ -247,23 +247,23 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>> extends UtilsData{
     })
   }
   // 重要: requestConfig需要深拷贝到具体实例中而非直接引用，此处保证在login/refresh时的requestConfig保持一致
-  abstract $request(requestConfig: RequestConfig<R>, rule?: Rule<R>, isRefresh?: boolean): Promise<R>
+  abstract $request(requestConfig: RequestConfig<R, L>, rule?: Rule<R, L>, isRefresh?: boolean): Promise<R>
   abstract $parseError(responseError: unknown): { msg?: string, type: 'request' | 'server', data: unknown }
-  get(requestConfig: Partial<RequestConfig<R>>) {
+  get(requestConfig: Partial<RequestConfig<R, L>>) {
     requestConfig.method = 'get'
     return this.request(requestConfig)
   }
-  post(requestConfig: Partial<RequestConfig<R>>) {
+  post(requestConfig: Partial<RequestConfig<R, L>>) {
     requestConfig.method = 'post'
     return this.request(requestConfig)
   }
-  form(requestConfig: Partial<RequestConfig<R>>) {
+  form(requestConfig: Partial<RequestConfig<R, L>>) {
     requestConfig.method = 'post'
     requestConfig.currentType = 'form'
     requestConfig.targetType = 'form'
     return this.request(requestConfig)
   }
-  json(requestConfig: Partial<RequestConfig<R>>) {
+  json(requestConfig: Partial<RequestConfig<R, L>>) {
     requestConfig.method = 'post'
     requestConfig.currentType = 'json'
     requestConfig.targetType = 'form'

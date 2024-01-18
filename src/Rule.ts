@@ -18,7 +18,7 @@ export interface responseType<D = any> {
 }
 
 type checkType = (url: string) => boolean
-type formatType<R = Record<PropertyKey, unknown>> = (response: R, requestConfig: RequestConfig<R>) => responseType
+type formatType<R = Record<PropertyKey, unknown>> = (response: R, requestConfig: RequestConfig<R, unknown>) => responseType
 type formatUrlType = (url: string) => string
 type loginType = () => Promise<unknown>
 type refreshType = () => Promise<unknown>
@@ -37,7 +37,7 @@ function defaultFormatUrl(url: string) {
   return url
 }
 
-class Rule<R = Record<PropertyKey, unknown>> extends UtilsData{
+class Rule<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> extends UtilsData{
   static $name = 'Rule'
   static $formatConfig = { name: 'Request:Rule', level: 5, recommend: false }
   prop: string
@@ -62,7 +62,7 @@ class Rule<R = Record<PropertyKey, unknown>> extends UtilsData{
     this.refresh = initOption.refresh
     this.formatUrl = initOption.formatUrl || defaultFormatUrl
   }
-  $appendToken(requestConfig: RequestConfig<R>) {
+  $appendToken(requestConfig: RequestConfig<R, L>) {
     const tokenList = requestConfig.token === true ? Object.keys(this.token) : requestConfig.token
     if (tokenList) {
       for (let i = 0; i < tokenList.length; i++) {
