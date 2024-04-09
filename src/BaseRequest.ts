@@ -1,4 +1,4 @@
-import { UtilsData, getEnv, jsonToForm } from "complex-utils"
+import { _Data, getEnv, jsonToForm } from "complex-utils"
 import { notice } from "complex-plugin"
 import { noticeMsgType } from "complex-plugin/src/notice"
 import Rule, { RuleInitOption, responseType } from "./Rule"
@@ -54,10 +54,11 @@ export interface RequestConfig<R = Record<PropertyKey, unknown>, L = Record<Prop
   local?: L // 请求插件的单独参数
 }
 
-abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> extends UtilsData{
+abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> extends _Data{
   static $name = 'BaseRequest'
   static $formatConfig = { name: 'Request:BaseRequest', level: 5, recommend: false }
   baseUrl?: string
+  isRefreshing?: Promise<any>
   status: statusType
   formatUrl: formatUrlType
   rule?: Record<string, Rule<R, L>>
@@ -84,7 +85,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
           this.rule.default = this.rule[defaultProp]
         }
         if (getEnv('real') === 'development' && config.showRule) {
-          this.$exportMsg(`默认的请求处理规则为[${this.rule.default!.$getName()}]`, 'log')
+          this.$exportMsg(`默认的请求处理规则为[${this.rule.default!._getName()}]`, 'log')
         }
       } else {
         this.$exportMsg(`未创建默认请求处理规则！`, 'error')
@@ -218,10 +219,15 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
             if (rule && rule.refresh && !isRefresh) {
               // 当前请求提示login说明请求前的token验证通过，此时在第一次需要登陆时进行rule.login的操作，进行可能的刷新Token机制
               // 此刷新机制失败则直接失败，如成功后依然需要登录则按照失败处理
-              rule.refresh().then(() => {
+              if (!this.isRefreshing) {
+                this.isRefreshing = rule.refresh()
+              }
+              this.isRefreshing.then(() => {
                 this._request(requestConfig, rule, isRefresh).then(res => {
+                  this.isRefreshing = undefined
                   resolve(res)
                 }).catch(err => {
+                  this.isRefreshing = undefined
                   reject(err)
                 })
               })

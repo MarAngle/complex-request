@@ -1,4 +1,4 @@
-import { isExist, setLocalData, getLocalData, removeLocalData, setSessionLocalData, getSessionLocalData, removeSessionLocalData, appendProp } from 'complex-utils'
+import { isExist, storage, appendProp } from 'complex-utils'
 import { RequestConfig } from './BaseRequest'
 
 type getValueType = () => unknown
@@ -24,21 +24,21 @@ export interface TokenInitOption {
 function setValue(this: Token, data: unknown, unSave?: boolean) {
   this.value = data
   if (!unSave) {
-    setLocalData(this.prop, data)
+    storage.setData(this.prop, data)
   }
 }
 
 function setValueBySession(this: Token, data: unknown, unSave?: boolean) {
   this.value = data
   if (!unSave) {
-    setSessionLocalData(this.prop, data)
+    storage.setSessionData(this.prop, data)
   }
 }
 
 function getValue(this: Token) {
   let data = this.$getValue!()
   if (!this.isExist(data)) {
-    data = getLocalData(this.prop, this.time)
+    data = storage.getData(this.prop, this.time)
     if (this.isExist(data)) {
       this.setValue(data, true)
     }
@@ -48,7 +48,7 @@ function getValue(this: Token) {
 function getValueBySession(this: Token) {
   let data = this.$getValue!()
   if (!this.isExist(data)) {
-    data = getSessionLocalData(this.prop, this.time)
+    data = storage.getSessionData(this.prop, this.time)
     if (this.isExist(data)) {
       this.setValue(data, true)
     }
@@ -58,7 +58,7 @@ function getValueBySession(this: Token) {
 function getValueFromValue(this: Token) {
   let data = this.value
   if (!this.isExist(data)) {
-    data = getLocalData(this.prop, this.time)
+    data = storage.getData(this.prop, this.time)
     if (this.isExist(data)) {
       this.setValue(data, true)
     }
@@ -68,7 +68,7 @@ function getValueFromValue(this: Token) {
 function getValueFromValueBySession(this: Token) {
   let data = this.value
   if (!this.isExist(data)) {
-    data = getSessionLocalData(this.prop, this.time)
+    data = storage.getSessionData(this.prop, this.time)
     if (this.isExist(data)) {
       this.setValue(data, true)
     }
@@ -77,11 +77,11 @@ function getValueFromValueBySession(this: Token) {
 }
 
 function removeValue(this: Token) {
-  removeLocalData(this.prop)
+  storage.removeData(this.prop)
   this.value = undefined
 }
 function removeValueBySession(this: Token) {
-  removeSessionLocalData(this.prop)
+  storage.removeSessionData(this.prop)
   this.value = undefined
 }
 
