@@ -49,7 +49,7 @@ export interface RequestConfig<R = Record<PropertyKey, unknown>, L = Record<Prop
   currentType: 'json' | 'form' // 当前数据类型
   targetType?: 'json' | 'form' // 目标数据类型=>初始化参数，后期无效
   responseType: 'json' | 'text' | 'blob' // 返回值类型，仅json进行格式化
-  responseFormat: boolean // 返回值格式化判断，为否不格式化
+  responseParse: boolean // 返回值解析判断，为否不解析
   failNotice: false | failNoticeOptionType
   local?: L // 请求插件的单独参数
 }
@@ -160,8 +160,8 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
     if (requestConfig.responseType === undefined) {
       requestConfig.responseType = 'json'
     }
-    if (requestConfig.responseFormat === undefined) {
-      requestConfig.responseFormat = true
+    if (requestConfig.responseParse === undefined) {
+      requestConfig.responseParse = true
     }
     if (requestConfig.failNotice === undefined) {
       requestConfig.failNotice = {}
@@ -211,8 +211,8 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
     }
     return new Promise((resolve, reject) => {
       this.$request(requestConfig, rule, isRefresh).then(response => {
-        if (requestConfig.responseFormat && requestConfig.responseType === 'json' && rule) {
-          const finalResponse = rule.format(response, requestConfig)
+        if (requestConfig.responseParse && requestConfig.responseType === 'json' && rule) {
+          const finalResponse = rule.parse(response, requestConfig)
           if (finalResponse.status === 'success') {
             resolve(finalResponse)
           } else if (finalResponse.status === 'login') {

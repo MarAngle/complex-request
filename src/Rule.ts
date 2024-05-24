@@ -18,7 +18,8 @@ export interface responseType<D = any> {
 }
 
 type checkType = (url: string) => boolean
-type formatType<R = Record<PropertyKey, unknown>> = (response: R, requestConfig: RequestConfig<R, unknown>) => responseType
+type formatType<R = Record<PropertyKey, unknown>> = (requestConfig: RequestConfig<R, unknown>) => void
+type parseType<R = Record<PropertyKey, unknown>> = (response: R, requestConfig: RequestConfig<R, unknown>) => responseType
 type formatUrlType = (url: string) => string
 type loginType = () => Promise<unknown>
 type refreshType = () => Promise<unknown>
@@ -27,7 +28,8 @@ export interface RuleInitOption<R = Record<PropertyKey, unknown>> {
   prop: string
   token?: tokenType
   check: checkType // 校验是否是对应Rule
-  format: formatType<R> // 格式化返回参数
+  format?: formatType<R> // 跟登录无关的参数在这里进行赋值，避免token过多导致的token失效后的连锁反应，注意此时的requestConfig已经经过了token的判断，data可能为formdata
+  parse: parseType<R> // 格式化返回参数
   login: loginType // 登录操作，触发于token本地验证失败时
   refresh: refreshType // 刷新操作，触发于请求提示login时
   formatUrl?: formatUrlType // 格式化对应URL
@@ -43,7 +45,8 @@ class Rule<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> e
   prop: string
   token: Record<string, Token>
   check: checkType
-  format: formatType<R>
+  format?: formatType<R>
+  parse: parseType<R>
   login: loginType
   refresh: refreshType
   formatUrl: formatUrlType
@@ -58,6 +61,7 @@ class Rule<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> e
     }
     this.check = initOption.check
     this.format = initOption.format
+    this.parse = initOption.parse
     this.login = initOption.login
     this.refresh = initOption.refresh
     this.formatUrl = initOption.formatUrl || defaultFormatUrl
@@ -83,9 +87,11 @@ class Rule<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> e
           }
         }
       }
-    } else {
-      return
     }
+    if (this.format) {
+      this.format(requestConfig)
+    }
+    return
   }
   setToken(tokenName: string, value: unknown, unSave?: boolean) {
     if (this.token[tokenName]) {

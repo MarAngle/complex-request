@@ -1,6 +1,10 @@
 ### ToDo
 - local传值类型可配置
 
+### 0.3.5
+- responseFormat=>responseParse
+- Rule的原format函数更改为parse函数，添加新format函数在请求前实现规则的格式化
+
 ### 0.3.0/1/2/3/4
 - 依赖大版本升级
 
