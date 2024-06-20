@@ -104,8 +104,8 @@ class Token {
     this.require = initOption.require
     this.value = initOption.value || undefined
     this.location = initOption.location || 'body'
-    this.time = initOption.time === undefined ? time : initOption.time
-    if (initOption.session !== undefined) {
+    this.time = initOption.time == undefined ? time : initOption.time
+    if (initOption.session != undefined) {
       session = initOption.session
     }
     this.isExist = initOption.isExist || isExist

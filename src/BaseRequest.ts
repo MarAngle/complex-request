@@ -127,13 +127,13 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
       requestConfig.method = 'get'
     }
     if (!requestConfig.headers) {
-      requestConfig.headers = config.contentType.data !== undefined ? {
+      requestConfig.headers = config.contentType.data != undefined ? {
         'Content-Type': config.contentType.data
       } : {}
-    } else if (requestConfig.headers['Content-Type'] === undefined && config.contentType.data !== undefined) {
+    } else if (requestConfig.headers['Content-Type'] == undefined && config.contentType.data != undefined) {
       requestConfig.headers['Content-Type'] = config.contentType.data
     }
-    if (requestConfig.currentType === undefined) {
+    if (requestConfig.currentType == undefined) {
       requestConfig.currentType = 'json'
     }
     const targetType = requestConfig.targetType || 'json'
@@ -151,19 +151,19 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
       }
     }
     requestConfig.currentType = targetType
-    if (requestConfig.token === undefined) {
+    if (requestConfig.token == undefined) {
       requestConfig.token = true
     }
     if (!requestConfig.params) {
       requestConfig.params = {}
     }
-    if (requestConfig.responseType === undefined) {
+    if (requestConfig.responseType == undefined) {
       requestConfig.responseType = 'json'
     }
-    if (requestConfig.responseParse === undefined) {
+    if (requestConfig.responseParse == undefined) {
       requestConfig.responseParse = true
     }
-    if (requestConfig.failNotice === undefined) {
+    if (requestConfig.failNotice == undefined) {
       requestConfig.failNotice = {}
     }
     return requestConfig as RequestConfig<R, L>
