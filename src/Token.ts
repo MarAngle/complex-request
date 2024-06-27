@@ -45,6 +45,7 @@ function getValue(this: Token) {
   }
   return data
 }
+
 function getValueBySession(this: Token) {
   let data = this.$getValue!()
   if (!this.isExist(data)) {
@@ -55,6 +56,7 @@ function getValueBySession(this: Token) {
   }
   return data
 }
+
 function getValueFromValue(this: Token) {
   let data = this.value
   if (!this.isExist(data)) {
@@ -65,6 +67,7 @@ function getValueFromValue(this: Token) {
   }
   return data
 }
+
 function getValueFromValueBySession(this: Token) {
   let data = this.value
   if (!this.isExist(data)) {
@@ -80,6 +83,7 @@ function removeValue(this: Token) {
   storage.removeData(this.prop)
   this.value = undefined
 }
+
 function removeValueBySession(this: Token) {
   storage.removeSessionData(this.prop)
   this.value = undefined

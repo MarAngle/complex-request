@@ -8,7 +8,6 @@ export type tokenType = {
   data?: Record<string, TokenInitOption>
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface responseType<D = any> {
   status: 'success' | 'fail' | 'login'
   data: D

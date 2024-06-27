@@ -1,7 +1,7 @@
 ### ToDo
 
 
-### 0.4.1
+### 0.4.1/2
 - BaseRequest的rule简化为单选，简化判断逻辑，需要多个rule可生成多个BaseRequest实例单独实现
 
 ### 0.3.6
