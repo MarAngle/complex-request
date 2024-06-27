@@ -17,7 +17,6 @@ export interface responseType<D = any> {
   err?: string | Error | Record<PropertyKey, unknown>
 }
 
-type checkType = (url: string) => boolean
 type formatType<R = Record<PropertyKey, unknown>> = (requestConfig: RequestConfig<R, unknown>) => void
 type parseType<R = Record<PropertyKey, unknown>> = (response: R, requestConfig: RequestConfig<R, unknown>) => responseType
 type formatUrlType = (url: string) => string
@@ -27,7 +26,6 @@ type refreshType = () => Promise<unknown>
 export interface RuleInitOption<R = Record<PropertyKey, unknown>> {
   prop: string
   token?: tokenType
-  check: checkType // 校验是否是对应Rule
   format?: formatType<R> // 跟登录无关的参数在这里进行赋值，避免token过多导致的token失效后的连锁反应，注意此时的requestConfig已经经过了token的判断，data可能为formdata
   parse: parseType<R> // 格式化返回参数
   login: loginType // 登录操作，触发于token本地验证失败时
@@ -44,7 +42,6 @@ class Rule<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> e
   static $formatConfig = { name: 'Request:Rule', level: 5, recommend: false }
   prop: string
   token: Record<string, Token>
-  check: checkType
   format?: formatType<R>
   parse: parseType<R>
   login: loginType
@@ -59,7 +56,6 @@ class Rule<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> e
         this.token[tokenName] = new Token(initOption.token.data[tokenName], tokenName, this.prop, initOption.token.time, initOption.token.session)
       }
     }
-    this.check = initOption.check
     this.format = initOption.format
     this.parse = initOption.parse
     this.login = initOption.login
