@@ -38,7 +38,7 @@ const defaultFormatUrl = function(url: string) {
   return url
 }
 
-export interface RequestConfig<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> {
+export interface RequestConfig<_R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> {
   url: string // 请求地址
   method: methodType // 请求方式
   headers: Record<string, undefined | null | string | number | boolean> // Header头

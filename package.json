@@ -1,6 +1,6 @@
 {
   "name": "complex-request",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "a complex request",
   "main": "index.ts",
   "repository": {
