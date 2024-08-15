@@ -1,6 +1,6 @@
 import { _Data, jsonToForm } from "complex-utils"
 import { notice } from "complex-plugin"
-import { noticeMsgType } from "complex-plugin/src/notice"
+import { messageType } from "complex-plugin/src/notice"
 import Rule, { RuleInitOption, responseType } from "./Rule"
 import config from "../config"
 
@@ -23,7 +23,7 @@ export type failNoticeOptionType = {
   local?: boolean
   content?: string
   duration?: number
-  type?: noticeMsgType
+  type?: messageType
   title?: string
 }
 
@@ -148,7 +148,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
       }
       const content = failNotice.content || msg
       if (content) {
-        notice.showMsg(content, failNotice.type, failNotice.title || title, failNotice.duration)
+        notice.message(content, failNotice.type, failNotice.title || title, failNotice.duration)
       }
     }
   }
