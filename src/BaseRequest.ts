@@ -280,14 +280,26 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
   setToken(tokenName: string, value: unknown, unSave?: boolean) {
     this.rule.setToken(tokenName, value, unSave)
   }
-  getToken (tokenName: string) {
+  getToken(tokenName: string) {
     return this.rule.getToken(tokenName)
   }
-  clearToken (tokenName: string | true) {
+  clearToken(tokenName: string | true) {
     return this.rule.clearToken(tokenName)
   }
-  destroyToken (tokenName: string | true) {
+  destroyToken(tokenName: string | true) {
     return this.rule.destroyToken(tokenName)
+  }
+  setRefreshToken(value: unknown, unSave?: boolean) {
+    this.rule.setRefreshToken(value, unSave)
+  }
+  getRefreshToken() {
+    return this.rule.getRefreshToken()
+  }
+  clearRefreshToken() {
+    return this.rule.clearRefreshToken()
+  }
+  destroyRefreshToken() {
+    return this.rule.destroyRefreshToken()
   }
 }
 

@@ -18,7 +18,7 @@ export interface TokenInitOption {
   getValue?: getValueType // 获取value函数实现，如存在此函数则不会直接从value中取值
   isExist?: isExistType // 判断数据是否存在，用户require判断和缓存获取判断
   clear?: clearType // 清除数据
-  destroy?: destroyType // 销毁数据
+  destroy?: destroyType // 销毁数据/会先触发清除数据
 }
 
 function setValue(this: Token, data: unknown, unSave?: boolean) {
@@ -154,7 +154,7 @@ class Token {
     }
   }
   destroy() {
-    this.removeValue()
+    this.clear()
     if (this.$destroy) {
       this.$destroy()
     }

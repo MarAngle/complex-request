@@ -6,6 +6,7 @@ export type tokenType = {
   time?: number
   session?: boolean
   data?: Record<string, TokenInitOption>
+  refreshToken?: TokenInitOption
 }
 
 export interface responseType<D = any> {
@@ -41,6 +42,7 @@ class Rule<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> e
   static $formatConfig = { name: 'Request:Rule', level: 5, recommend: false }
   prop: string
   token: Record<string, Token>
+  refreshToken?: Token
   format?: formatType<R>
   parse: parseType<R>
   login: loginType
@@ -50,9 +52,14 @@ class Rule<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> e
     super()
     this.prop = initOption.prop
     this.token = {}
-    if (initOption.token && initOption.token.data) {
-      for (const tokenName in initOption.token.data) {
-        this.token[tokenName] = new Token(initOption.token.data[tokenName], tokenName, this.prop, initOption.token.time, initOption.token.session)
+    if (initOption.token) {
+      if (initOption.token.data) {
+        for (const tokenName in initOption.token.data) {
+          this.token[tokenName] = new Token(initOption.token.data[tokenName], tokenName, this.prop, initOption.token.time, initOption.token.session)
+        }
+      }
+      if (initOption.token.refreshToken) {
+        this.refreshToken = new Token(initOption.token.refreshToken, 'refreshToken', this.prop, initOption.token.time, initOption.token.session)
       }
     }
     this.format = initOption.format
@@ -102,12 +109,57 @@ class Rule<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> e
       this.$exportMsg(`未找到${tokenName}对应的Token规则,getToken失败！`, 'error')
     }
   }
+  setRefreshToken(value: unknown, unSave?: boolean) {
+    if (this.refreshToken) {
+      this.refreshToken.setValue(value, unSave)
+    } else {
+      this.$exportMsg(`未找到refreshToken对应的Token规则,setRefreshToken失败！`, 'error')
+    }
+  }
+  getRefreshToken() {
+    if (this.refreshToken) {
+      return this.refreshToken.getValue()
+    } else {
+      this.$exportMsg(`未找到refreshToken对应的Token规则,getRefreshToken失败！`, 'error')
+    }
+  }
+  clearRefreshToken() {
+    if (this.refreshToken) {
+      this.refreshToken.clear()
+    }
+  }
+  destroyRefreshToken() {
+    if (this.refreshToken) {
+      this.refreshToken.destroy()
+      delete this.refreshToken
+    }
+  }
+  protected _clearToken(tokenName: string) {
+    if (this.token[tokenName]) {
+      this.token[tokenName].clear()
+      return true
+    } else {
+      this.$exportMsg(`未找到${tokenName}对应的token规则,clearToken失败！`, 'warn')
+      return false
+    }
+  }
+  protected _destroyToken(tokenName: string) {
+    if (this.token[tokenName]) {
+      this.token[tokenName].destroy()
+      delete this.token[tokenName]
+      return true
+    } else {
+      this.$exportMsg(`未找到${tokenName}对应的token规则,destroyToken失败！`, 'warn')
+      return false
+    }
+  }
   clearToken(tokenName: true | string) {
     if (tokenName) {
       if (tokenName === true) {
         for (const n in this.token) {
           this._clearToken(n)
         }
+        this.clearRefreshToken()
         return true
       } else {
         return this._clearToken(tokenName)
@@ -117,37 +169,19 @@ class Rule<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> e
       return false
     }
   }
-  protected _clearToken (tokenName: string) {
-    if (this.token[tokenName]) {
-      this.token[tokenName].clear()
-      return true
-    } else {
-      this.$exportMsg(`未找到${tokenName}对应的token规则,clearToken失败！`, 'warn')
-      return false
-    }
-  }
-  destroyToken (tokenName: true | string) {
+  destroyToken(tokenName: true | string) {
     if (tokenName) {
       if (tokenName === true) {
         for (const n in this.token) {
           this._destroyToken(n)
         }
+        this.destroyRefreshToken()
         return true
       } else {
         return this._destroyToken(tokenName)
       }
     } else {
       this.$exportMsg(`未指定需要销毁的token！`)
-      return false
-    }
-  }
-  protected _destroyToken (tokenName: string) {
-    if (this.token[tokenName]) {
-      this.token[tokenName].destroy()
-      delete this.token[tokenName]
-      return true
-    } else {
-      this.$exportMsg(`未找到${tokenName}对应的token规则,destroyToken失败！`, 'warn')
       return false
     }
   }
