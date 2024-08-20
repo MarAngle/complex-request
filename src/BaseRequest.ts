@@ -47,7 +47,7 @@ export interface RequestConfig<_R = Record<PropertyKey, unknown>, L = Record<Pro
   data: Record<PropertyKey, unknown> | FormData // Body体
   params: Record<PropertyKey, unknown> // query数据
   token: boolean | string[] // Token
-  format?: (finalConfig: unknown, isRefresh?: boolean) => unknown // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
+  format?: (finalConfig: unknown, trigger?: requestTrigger) => unknown // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
   currentType: 'json' | 'form' // 当前数据类型
   targetType?: 'json' | 'form' // 目标数据类型=>初始化参数，后期无效
   responseType: 'json' | 'text' | 'blob' // 返回值类型，仅json进行格式化

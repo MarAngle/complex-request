@@ -1,7 +1,7 @@
 ### ToDo
 - 刷新Token实现
 
-### 0.5.2
+### 0.5.2/3
 - rule.login添加trigger参数，确认登录触发来源
 - _request替换isRefresh为trigger参数，实现判断请求是否来自于refresh/login成功后的回调
 - responseType.status添加refresh状态
