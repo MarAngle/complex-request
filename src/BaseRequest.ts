@@ -38,6 +38,8 @@ const defaultFormatUrl = function(url: string) {
   return url
 }
 
+export type requestTrigger = 'login' | 'refresh'
+
 export interface RequestConfig<_R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> {
   url: string // 请求地址
   method: methodType // 请求方式
@@ -58,6 +60,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
   static $name = 'BaseRequest'
   static $formatConfig = { name: 'Request:BaseRequest', level: 5, recommend: false }
   baseUrl?: string
+  isLogining?: Promise<any>
   isRefreshing?: Promise<any>
   status: statusType
   formatUrl: formatUrlType
@@ -152,15 +155,15 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
       }
     }
   }
-  protected _request(requestConfig: RequestConfig<R, L>, isRefresh?: boolean): Promise<responseType> {
+  protected _request(requestConfig: RequestConfig<R, L>, trigger?: requestTrigger): Promise<responseType> {
     const res = this.rule.$appendToken(requestConfig)
     if (res) {
       if (res.token) {
         // 存在Token规则但是不存在值，需要调用login接口
         // 此处不应判断是否为重复操作
         return new Promise((resolve, reject) => {
-          this.rule.login().then(() => {
-            this._request(requestConfig, isRefresh).then(res => {
+          this.rule.login('token').then(() => {
+            this._request(requestConfig, 'login').then(res => {
               resolve(res)
             }).catch(err => {
               reject(err)
@@ -177,20 +180,22 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
       }
     }
     return new Promise((resolve, reject) => {
-      this.$request(requestConfig, isRefresh).then(response => {
+      this.$request(requestConfig, trigger).then(response => {
         if (requestConfig.responseParse && requestConfig.responseType === 'json') {
           const finalResponse = this.rule.parse(response, requestConfig)
           if (finalResponse.status === 'success') {
             resolve(finalResponse)
-          } else if (finalResponse.status === 'login') {
-            if (this.rule.refresh && !isRefresh) {
-              // 当前请求提示login说明请求前的token验证通过，此时在第一次需要登陆时进行this.rule.login的操作，进行可能的刷新Token机制
-              // 此刷新机制失败则直接失败，如成功后依然需要登录则按照失败处理
+          } else if (finalResponse.status === 'refresh') {
+            if (this.rule.refresh && trigger !== 'refresh') {
+              // 当前请求提示login说明请求前的token验证通过
+              // 此时在第一次需要登陆时进行this.rule.refresh的操作，进行可能的刷新Token机制
+              // 此刷新机制失败则触发登录
+              // 如登录后依然需要登录则按照失败处理(此处的登录可能是由本地token验证失败触发的登录)
               if (!this.isRefreshing) {
                 this.isRefreshing = this.rule.refresh()
               }
               this.isRefreshing.then(() => {
-                this._request(requestConfig, isRefresh).then(res => {
+                this._request(requestConfig, 'refresh').then(res => {
                   this.isRefreshing = undefined
                   resolve(res)
                 }).catch(err => {
@@ -198,9 +203,39 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
                   reject(err)
                 })
               })
+            } else if (trigger !== 'login') {
+              if (!this.isLogining) {
+                this.isLogining = this.rule.login('refresh')
+              }
+              this.isLogining.then(() => {
+                this._request(requestConfig, 'login').then(res => {
+                  this.isLogining = undefined
+                  resolve(res)
+                }).catch(err => {
+                  this.isLogining = undefined
+                  reject(err)
+                })
+              }).catch(err => {
+                reject(err)
+              })
             } else {
               reject(finalResponse)
             }
+          } else if (finalResponse.status === 'login') {
+            if (!this.isLogining) {
+              this.isLogining = this.rule.login('login')
+            }
+            this.isLogining.then(() => {
+              this._request(requestConfig, 'login').then(res => {
+                this.isLogining = undefined
+                resolve(res)
+              }).catch(err => {
+                this.isLogining = undefined
+                reject(err)
+              })
+            }).catch(err => {
+              reject(err)
+            })
           } else if (finalResponse.status === 'fail') {
             this._showFailNotice(false, requestConfig.failNotice, '请求失败', finalResponse.msg)
             reject(finalResponse)
@@ -220,7 +255,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
     })
   }
   // 重要: requestConfig需要深拷贝到具体实例中而非直接引用，此处保证在login/refresh时的requestConfig保持一致
-  abstract $request(requestConfig: RequestConfig<R, L>, isRefresh?: boolean): Promise<R>
+  abstract $request(requestConfig: RequestConfig<R, L>, from?: requestTrigger): Promise<R>
   abstract $parseError(responseError: unknown): { msg?: string, type: 'request' | 'server', data: unknown }
   get(requestConfig: Partial<RequestConfig<R, L>>) {
     requestConfig.method = 'get'

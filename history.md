@@ -1,6 +1,13 @@
 ### ToDo
 - 刷新Token实现
 
+### 0.5.2
+- rule.login添加trigger参数，确认登录触发来源
+- _request替换isRefresh为trigger参数，实现判断请求是否来自于refresh/login成功后的回调
+- responseType.status添加refresh状态
+- responseType.status === 'refresh'时认为需要刷新token，调用refresh进行token刷新，刷新成功后重新请求再次触发refresh则直接调用login进行登录
+- responseType.status === 'login'时直接调用login进行登录
+
 ### 0.5.1
 - complex-plugin版本升级
 
