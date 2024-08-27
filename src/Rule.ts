@@ -17,17 +17,17 @@ export interface responseType<D = any> {
   err?: string | Error | Record<PropertyKey, unknown>
 }
 
-type formatType<R = Record<PropertyKey, unknown>> = (requestConfig: RequestConfig<R, unknown>) => void
-type parseType<R = Record<PropertyKey, unknown>> = (response: R, requestConfig: RequestConfig<R, unknown>) => responseType
+type formatType<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> = (requestConfig: RequestConfig<R, L>) => void
+type parseType<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> = (response: R, requestConfig: RequestConfig<R, L>) => responseType
 type formatUrlType = (url: string) => string
 type loginType = (trigger: 'token' | 'refresh' | 'login') => Promise<unknown>
 type refreshType = () => Promise<unknown>
 
-export interface RuleInitOption<R = Record<PropertyKey, unknown>> {
+export interface RuleInitOption<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> {
   prop: string
   token?: tokenType
-  format?: formatType<R> // 跟登录无关的参数在这里进行赋值，避免token过多导致的token失效后的连锁反应，注意此时的requestConfig已经经过了token的判断，data可能为formdata
-  parse: parseType<R> // 格式化返回参数
+  format?: formatType<R, L> // 跟登录无关的参数在这里进行赋值，避免token过多导致的token失效后的连锁反应，注意此时的requestConfig已经经过了token的判断，data可能为formdata
+  parse: parseType<R, L> // 格式化返回参数
   login: loginType // 登录操作，触发于token本地验证失败时\接口login\接口refresh成功后重新调用依然需要refresh时
   refresh: refreshType // 刷新操作，触发于请求提示refresh时
   formatUrl?: formatUrlType // 格式化对应URL
@@ -43,12 +43,12 @@ class Rule<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> e
   prop: string
   token: Record<string, Token>
   refreshToken?: Token
-  format?: formatType<R>
-  parse: parseType<R>
+  format?: formatType<R, L>
+  parse: parseType<R, L>
   login: loginType
   refresh: refreshType
   formatUrl: formatUrlType
-  constructor(initOption: RuleInitOption<R>) {
+  constructor(initOption: RuleInitOption<R, L>) {
     super()
     this.prop = initOption.prop
     this.token = {}

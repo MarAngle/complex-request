@@ -10,11 +10,11 @@ type statusType = {
 
 export type formatUrlType = (url: string) => string
 
-export interface RequestInitOption<R = Record<PropertyKey, unknown>> {
+export interface RequestInitOption<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> {
   baseUrl?: string
   status?: statusType
   formatUrl?: formatUrlType
-  rule: RuleInitOption<R>
+  rule: RuleInitOption<R, L>
 }
 
 export type methodType = 'get' | 'post' | 'delete' | 'put' | 'patch' | 'head' | 'options'
@@ -47,7 +47,7 @@ export interface RequestConfig<_R = Record<PropertyKey, unknown>, L = Record<Pro
   data: Record<PropertyKey, unknown> | FormData // Body体
   params: Record<PropertyKey, unknown> // query数据
   token: boolean | string[] // Token
-  format?: (finalConfig: unknown, trigger?: requestTrigger) => unknown // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
+  format?: (finalConfig: L, trigger?: requestTrigger) => unknown // 对最终的数据做格式化处理，此数据为对应请求插件的参数而非Request的参数
   currentType: 'json' | 'form' // 当前数据类型
   targetType?: 'json' | 'form' // 目标数据类型=>初始化参数，后期无效
   responseType: 'json' | 'text' | 'blob' // 返回值类型，仅json进行格式化
@@ -65,7 +65,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
   status: statusType
   formatUrl: formatUrlType
   rule: Rule<R, L>
-  constructor(initOption: RequestInitOption<R>) {
+  constructor(initOption: RequestInitOption<R, L>) {
     super()
     this.baseUrl = initOption.baseUrl
     this.status = {
