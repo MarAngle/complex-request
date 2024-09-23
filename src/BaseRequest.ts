@@ -19,13 +19,18 @@ export interface RequestInitOption<R = Record<PropertyKey, unknown>, L = Record<
 
 export type methodType = 'get' | 'post' | 'delete' | 'put' | 'patch' | 'head' | 'options'
 
-export type failNoticeOptionType = {
-  local?: boolean
+export type failType = 'internal' | 'server'
+
+export type totalFailType = 'token' | failType
+
+export type failOption = {
+  intercept?: totalFailType[] // 内部报错判断值
   content?: string
   duration?: number
   type?: messageType
   title?: string
 }
+
 
 const defaultFormatUrlWithBaseUrl = function(this: BaseRequest, url: string) {
   if (url.indexOf('https://') !== 0 && url.indexOf('http://') !== 0) {
@@ -52,13 +57,33 @@ export interface RequestConfig<_R = Record<PropertyKey, unknown>, L = Record<Pro
   targetType?: 'json' | 'form' // 目标数据类型=>初始化参数，后期无效
   responseType: 'json' | 'text' | 'blob' // 返回值类型，仅json进行格式化
   responseParse: boolean // 返回值解析判断，为否不解析
-  failNotice: false | failNoticeOptionType
+  fail: false | failOption
   local?: L // 请求插件的单独参数
 }
 
 abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> extends _Data{
   static $name = 'BaseRequest'
   static $formatConfig = { name: 'Request:BaseRequest', level: 5, recommend: false }
+  static $fail = {
+    message: {
+      internal: '请求终止，请求发送失败！',
+      server: '服务器请求失败，请刷新重试或联系管理员！'
+    } as Record<totalFailType, undefined | string>,
+    option: {
+      token: {
+        type: 'error',
+        title: 'Token错误'
+      },
+      internal: {
+        type: 'error',
+        title: '请求失败',
+      },
+      server: {
+        type: 'error',
+        title: '请求错误',
+      },
+    } as Record<totalFailType, failOption>
+  }
   baseUrl?: string
   isLogining?: Promise<any>
   isRefreshing?: Promise<any>
@@ -136,22 +161,24 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
     if (requestConfig.responseParse == undefined) {
       requestConfig.responseParse = true
     }
-    if (requestConfig.failNotice == undefined) {
-      requestConfig.failNotice = {}
+    if (requestConfig.fail == undefined) {
+      requestConfig.fail = {}
     }
     return requestConfig as RequestConfig<R, L>
   }
   request(requestConfig: Partial<RequestConfig<R, L>>) {
     return this._request(this._parseRequestConfig(requestConfig))
   }
-  protected _showFailNotice(isLocal: boolean, failNotice: false | failNoticeOptionType, title: string, msg?: string) {
-    if (failNotice !== false) {
-      if (failNotice.local === false && isLocal) {
+  protected _showFail(fail: false | failOption, from: totalFailType, msg?: string) {
+    if (fail !== false) {
+      if (fail.intercept && fail.intercept.indexOf(from) > -1) {
+        // 存在拦截时判断类型在拦截范围内直接返回不输出错误信息
         return
       }
-      const content = failNotice.content || msg
+      const content = fail.content || msg
       if (content) {
-        notice.message(content, failNotice.type, failNotice.title || title, failNotice.duration)
+        const $failOption = (this.constructor as typeof BaseRequest).$fail.option[from]
+        notice.message(content, fail.type || $failOption.type, fail.title || $failOption.title, fail.duration || $failOption.duration)
       }
     }
   }
@@ -175,7 +202,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
       } else {
         const msg = `${res.prop}对应的Token规则不存在！`
         this.$exportMsg(msg)
-        this._showFailNotice(true, requestConfig.failNotice, '请求终止', msg)
+        this._showFail(requestConfig.fail, 'token', msg)
         return Promise.reject({ status: 'fail', code: 'token absent' })
       }
     }
@@ -237,7 +264,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
               reject(err)
             })
           } else if (finalResponse.status === 'fail') {
-            this._showFailNotice(false, requestConfig.failNotice, '请求失败', finalResponse.msg)
+            this._showFail(requestConfig.fail, 'server', finalResponse.msg)
             reject(finalResponse)
           }
         } else {
@@ -249,14 +276,15 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
         }
       }).catch(error => {
         const err = this.$parseError(error)
-        this._showFailNotice(true, requestConfig.failNotice, err.type === 'request' ? '请求终止' : '请求错误', err.msg || config.fail[err.type])
+        const $failOption = (this.constructor as typeof BaseRequest).$fail
+        this._showFail(requestConfig.fail, err.type, err.msg || $failOption.message[err.type])
         reject({ status: 'fail', code: err.type + ' error', err: error })
       })
     })
   }
   // 重要: requestConfig需要深拷贝到具体实例中而非直接引用，此处保证在login/refresh时的requestConfig保持一致
   abstract $request(requestConfig: RequestConfig<R, L>, from?: requestTrigger): Promise<R>
-  abstract $parseError(responseError: unknown): { msg?: string, type: 'request' | 'server', data: unknown }
+  abstract $parseError(responseError: unknown): { msg?: string, type: failType, data: unknown }
   get(requestConfig: Partial<RequestConfig<R, L>>) {
     requestConfig.method = 'get'
     return this.request(requestConfig)

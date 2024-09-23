@@ -1,6 +1,11 @@
 ### ToDo
 - 刷新Token实现
 
+### 0.5.6
+- failNotice => fail
+- failNotice.local => fail.intercept
+- $parseError返回的type类型优化
+
 ### 0.5.5
 - 优化类型传递
 

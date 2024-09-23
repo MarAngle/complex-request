@@ -16,10 +16,6 @@ const config = {
   contentType: {
     data: undefined,
     form: 'multipart/form-data'
-  },
-  fail: {
-    request: '请求终止，请求发送失败！',
-    server: '服务器请求失败，请刷新重试或联系管理员！'
   }
 }
 
