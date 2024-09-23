@@ -5,6 +5,7 @@
 - failNotice => fail
 - failNotice.local => fail.intercept
 - $parseError返回的type类型优化
+- config配置项迁移到类静态数据中
 
 ### 0.5.5
 - 优化类型传递

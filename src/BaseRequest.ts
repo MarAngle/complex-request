@@ -2,7 +2,6 @@ import { _Data, jsonToForm } from "complex-utils"
 import { notice } from "complex-plugin"
 import { messageType } from "complex-plugin/src/notice"
 import Rule, { RuleInitOption, responseType } from "./Rule"
-import config from "../config"
 
 type statusType = {
   [prop: number]: string
@@ -64,6 +63,23 @@ export interface RequestConfig<_R = Record<PropertyKey, unknown>, L = Record<Pro
 abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> extends _Data{
   static $name = 'BaseRequest'
   static $formatConfig = { name: 'Request:BaseRequest', level: 5, recommend: false }
+  static $status = {
+    400: '错误请求！',
+    403: '拒绝访问！',
+    404: '很抱歉，资源未找到！',
+    405: '请求方法不支持！',
+    408: '请求超时！',
+    410: '请求资源已删除！',
+    500: '服务器内部错误！',
+    502: '错误网关！',
+    503: '服务不可用！',
+    504: '网关超时！',
+    505: 'HTTP版本不受支持！'
+  }
+  static $contentType = {
+    json: undefined,
+    form: 'multipart/form-data'
+  }
   static $fail = {
     message: {
       internal: '请求终止，请求发送失败！',
@@ -94,7 +110,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
     super()
     this.baseUrl = initOption.baseUrl
     this.status = {
-      ...config.status,
+      ...(this.constructor as typeof BaseRequest).$status,
       ...initOption.status
     }
     this.formatUrl = this._getFormatUrl(initOption.formatUrl)
@@ -124,17 +140,16 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
     if (!requestConfig.method) {
       requestConfig.method = 'get'
     }
-    if (!requestConfig.headers) {
-      requestConfig.headers = config.contentType.data != undefined ? {
-        'Content-Type': config.contentType.data
-      } : {}
-    } else if (requestConfig.headers['Content-Type'] == undefined && config.contentType.data != undefined) {
-      requestConfig.headers['Content-Type'] = config.contentType.data
-    }
-    if (requestConfig.currentType == undefined) {
-      requestConfig.currentType = 'json'
-    }
     const targetType = requestConfig.targetType || 'json'
+    const $contentType = (this.constructor as typeof BaseRequest).$contentType
+    const defaultContentType = targetType === 'json' ? $contentType.json : $contentType.form
+    if (!requestConfig.headers) {
+      requestConfig.headers = defaultContentType != undefined ? {
+        'Content-Type': defaultContentType
+      } : {}
+    } else if (requestConfig.headers['Content-Type'] == undefined && defaultContentType != undefined) {
+      requestConfig.headers['Content-Type'] = defaultContentType
+    }
     if (!requestConfig.data) {
       requestConfig.data = targetType === 'form' ? new FormData() : {}
     } else if (requestConfig.currentType !== targetType) {
@@ -149,6 +164,9 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
       }
     }
     requestConfig.currentType = targetType
+    if (requestConfig.currentType == undefined) {
+      requestConfig.currentType = 'json'
+    }
     if (requestConfig.token == undefined) {
       requestConfig.token = true
     }
