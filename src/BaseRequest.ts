@@ -92,11 +92,11 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
       },
       internal: {
         type: 'error',
-        title: '请求失败',
+        title: '请求错误'
       },
       server: {
         type: 'error',
-        title: '请求错误',
+        title: '请求失败'
       },
     } as Record<totalFailType, failOption>
   }
@@ -141,6 +141,9 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
       requestConfig.method = 'get'
     }
     const targetType = requestConfig.targetType || 'json'
+    if (requestConfig.currentType == undefined) {
+      requestConfig.currentType = 'json'
+    }
     const $contentType = (this.constructor as typeof BaseRequest).$contentType
     const defaultContentType = targetType === 'json' ? $contentType.json : $contentType.form
     if (!requestConfig.headers) {
@@ -164,9 +167,6 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
       }
     }
     requestConfig.currentType = targetType
-    if (requestConfig.currentType == undefined) {
-      requestConfig.currentType = 'json'
-    }
     if (requestConfig.token == undefined) {
       requestConfig.token = true
     }
