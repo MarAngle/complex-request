@@ -129,7 +129,7 @@ class Token {
     if (this.$checkValue(value)) {
       const location = this.location
       if (location === 'body') {
-        appendProp(requestConfig.data, tokenName, value, requestConfig.currentType)
+        appendProp(requestConfig.data as Record<PropertyKey, unknown>, tokenName, value, requestConfig.currentType as 'json')
       } else if (location === 'header') {
         requestConfig.headers[tokenName] = value as string
       } else if (location === 'params') {

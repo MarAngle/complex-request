@@ -1,6 +1,9 @@
 ### ToDo
 - 刷新Token实现
 
+### 0.5.8
+- complex-plugin版本升级
+
 ### 0.5.6/7
 - failNotice => fail
 - failNotice.local => fail.intercept
