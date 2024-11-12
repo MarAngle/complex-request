@@ -30,7 +30,6 @@ export type failOption = {
   title?: string
 }
 
-
 const defaultFormatUrlWithBaseUrl = function(this: BaseRequest, url: string) {
   if (url.indexOf('https://') !== 0 && url.indexOf('http://') !== 0) {
     // 当前URL不以http/https开始，则认为此URL需要添加默认前缀
@@ -38,6 +37,7 @@ const defaultFormatUrlWithBaseUrl = function(this: BaseRequest, url: string) {
   }
   return url
 }
+
 const defaultFormatUrl = function(url: string) {
   return url
 }
