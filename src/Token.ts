@@ -93,9 +93,9 @@ class Token {
   static $name = 'Token'
   prop: string
   require?: boolean
-  value: unknown
+  value?: unknown
   location: locationType
-  time: undefined | number
+  time?: number
   isExist: isExistType
   setValue: (data: unknown, unSave?: boolean) => void
   $getValue?: getValueType
@@ -105,10 +105,20 @@ class Token {
   $clear?: clearType
   constructor(initOption: TokenInitOption, prop: string, ruleProp: string, time?: number, session?: boolean) {
     this.prop = `require-${prop}-${ruleProp}`
-    this.require = initOption.require
-    this.value = initOption.value || undefined
+    if (initOption.require !== undefined) {
+      this.require = initOption.require
+    }
+    if (initOption.value !== undefined) {
+      this.value = initOption.value
+    }
     this.location = initOption.location || 'body'
-    this.time = initOption.time == undefined ? time : initOption.time
+    if (initOption.time === undefined) {
+      if (time !== undefined) {
+        this.time = time
+      }
+    } else {
+      this.time = initOption.time
+    }
     if (initOption.session != undefined) {
       session = initOption.session
     }

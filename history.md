@@ -1,6 +1,9 @@
 ### ToDo
 - 刷新Token实现
 
+### 0.5.10
+- complex-plugin版本升级，逻辑优化
+
 ### 0.5.8/9
 - complex-plugin版本升级
 
