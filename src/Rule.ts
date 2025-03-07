@@ -71,22 +71,14 @@ class Rule<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> e
   $appendToken(requestConfig: RequestConfig<R, L>) {
     const tokenList = requestConfig.token === true ? Object.keys(this.token) : requestConfig.token
     if (tokenList) {
-      for (let i = 0; i < tokenList.length; i++) {
-        const tokenName = tokenList[i]
+      for (const tokenName of tokenList) {
         const token = this.token[tokenName]
         if (token) {
           if (!token.$appendValue(requestConfig, tokenName)) {
-            return {
-              prop: tokenName,
-              token: true,
-              value: false
-            }
+            return { prop: tokenName, token: true, value: false }
           }
         } else {
-          return {
-            prop: tokenName,
-            token: false
-          }
+          return { prop: tokenName, token: false }
         }
       }
     }

@@ -31,7 +31,7 @@ export type failOption = {
 }
 
 const defaultFormatUrlWithBaseUrl = function(this: BaseRequest, url: string) {
-  if (url.indexOf('https://') !== 0 && url.indexOf('http://') !== 0) {
+  if (!url.startsWith('https://') && !url.startsWith('http://')) {
     // 当前URL不以http/https开始，则认为此URL需要添加默认前缀
     url = this.baseUrl + url
   }
@@ -60,7 +60,7 @@ export interface RequestConfig<_R = Record<PropertyKey, unknown>, L = Record<Pro
   local?: L // 请求插件的单独参数
 }
 
-abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> extends _Data{
+abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<PropertyKey, unknown>> extends _Data {
   static $name = 'BaseRequest'
   static $formatConfig = { name: 'Request:BaseRequest', level: 5, recommend: false }
   static $status = {
@@ -206,17 +206,7 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
       if (res.token) {
         // 存在Token规则但是不存在值，需要调用login接口
         // 此处不应判断是否为重复操作
-        return new Promise((resolve, reject) => {
-          this.rule.login('token').then(() => {
-            this._request(requestConfig, 'login').then(res => {
-              resolve(res)
-            }).catch(err => {
-              reject(err)
-            })
-          }).catch(err => {
-            reject(err)
-          })
-        })
+        return this._handleTokenLogin(requestConfig)
       } else {
         const msg = `${res.prop}对应的Token规则不存在！`
         this.$exportMsg(msg)
@@ -224,6 +214,16 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
         return Promise.reject({ status: 'fail', code: 'token absent' })
       }
     }
+    return this._handleRequest(requestConfig, trigger)
+  }
+  private _handleTokenLogin(requestConfig: RequestConfig<R, L>): Promise<responseType> {
+    return new Promise((resolve, reject) => {
+      this.rule.login('token').then(() => {
+        this._request(requestConfig, 'login').then(resolve).catch(reject)
+      }).catch(reject)
+    })
+  }
+  private _handleRequest(requestConfig: RequestConfig<R, L>, trigger?: requestTrigger): Promise<responseType> {
     return new Promise((resolve, reject) => {
       this.$request(requestConfig, trigger).then(response => {
         if (requestConfig.responseParse && requestConfig.responseType === 'json') {
@@ -240,29 +240,19 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
                 this.isRefreshing = this.rule.refresh()
               }
               this.isRefreshing.then(() => {
-                this._request(requestConfig, 'refresh').then(res => {
+                this._request(requestConfig, 'refresh').then(resolve).catch(reject).finally(() => {
                   this.isRefreshing = undefined
-                  resolve(res)
-                }).catch(err => {
-                  this.isRefreshing = undefined
-                  reject(err)
                 })
-              })
+              }).catch(reject)
             } else if (trigger !== 'login') {
               if (!this.isLogining) {
                 this.isLogining = this.rule.login('refresh')
               }
               this.isLogining.then(() => {
-                this._request(requestConfig, 'login').then(res => {
+                this._request(requestConfig, 'login').then(resolve).catch(reject).finally(() => {
                   this.isLogining = undefined
-                  resolve(res)
-                }).catch(err => {
-                  this.isLogining = undefined
-                  reject(err)
                 })
-              }).catch(err => {
-                reject(err)
-              })
+              }).catch(reject)
             } else {
               reject(finalResponse)
             }
@@ -271,26 +261,16 @@ abstract class BaseRequest<R = Record<PropertyKey, unknown>, L = Record<Property
               this.isLogining = this.rule.login('login')
             }
             this.isLogining.then(() => {
-              this._request(requestConfig, 'login').then(res => {
+              this._request(requestConfig, 'login').then(resolve).catch(reject).finally(() => {
                 this.isLogining = undefined
-                resolve(res)
-              }).catch(err => {
-                this.isLogining = undefined
-                reject(err)
               })
-            }).catch(err => {
-              reject(err)
-            })
+            }).catch(reject)
           } else if (finalResponse.status === 'fail') {
             this._showFail(requestConfig.fail, 'server', finalResponse.msg)
             reject(finalResponse)
           }
         } else {
-          resolve({
-            status: 'success',
-            code: 'origin',
-            data: response
-          })
+          resolve({ status: 'success', code: 'origin', data: response })
         }
       }).catch(error => {
         const err = this.$parseError(error)

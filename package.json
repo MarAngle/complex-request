@@ -1,6 +1,6 @@
 {
   "name": "complex-request",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "a complex request",
   "main": "index.ts",
   "repository": {
@@ -8,7 +8,7 @@
     "url": "https://github.com/MarAngle/complex-request.git"
   },
   "dependencies": {
-    "complex-plugin": "4.8.1 - 4.8.99"
+    "complex-plugin": "4.8.2 - 4.8.99"
   },
   "devDependencies": {
     "typescript": "^5.2.2"
